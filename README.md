@@ -93,7 +93,8 @@ Qwen 的身份参考仍需直接接 `image_1`；姿态来源图和身份参考�
 
 打开 [`examples/qwen21_director_controlnet.json`](examples/qwen21_director_controlnet.json)。
 API 示例为 [`examples/qwen21_director_controlnet_api.json`](examples/qwen21_director_controlnet_api.json)。
-本机已安装示例工作流 **JR_Director_ControlNet**，默认 512、25 步、强度 1.0。
+本机已安装带中文说明和分组的示例工作流 **JR_Director_ControlNet_Example**，默认 512、25 步、强度 1.0，演示 Walking + 45° 相机。
+桌面同时提供 `JR Qwen Image 2.1 Director - ControlNet Example.json`，可以直接拖入 ComfyUI。
 
 1. 从 [Kijai 的测试权重目录](https://huggingface.co/Kijai/QwenImage_experimental/tree/main/model_patches)
    下载 `qwen_image_2.1_fun_controlnet_union_int8_convrot.safetensors`，放到 ComfyUI 配置的 `models/model_patches`。
