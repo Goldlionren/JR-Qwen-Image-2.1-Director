@@ -24,11 +24,17 @@ app.registerExtension({
       let mounted:any;
       let loading=false;
       const update=(value:string)=>{
-        if(loading)return;
-        stateWidget.value=value;
+        if(loading||stateWidget.value===value)return;
         const render=JSON.parse(value).render;
-        for(const key of ['width','height']) {const widget=this.widgets.find((w:any)=>w.name===key);if(widget&&widget.value!==render[key])widget.value=render[key];}
-        this.setDirtyCanvas?.(true,true);
+        // DOM widgets do not pass through LiteGraph's native widget callbacks.
+        // Paired canvas events notify the frontend's debounced workflow tracker.
+        const canvas=this.graph?app.canvas:null;
+        canvas?.emitBeforeChange?.();
+        try {
+          stateWidget.value=value;
+          for(const key of ['width','height']) {const widget=this.widgets.find((w:any)=>w.name===key);if(widget&&widget.value!==render[key])widget.value=render[key];}
+          this.setDirtyCanvas?.(true,true);
+        } finally {canvas?.emitAfterChange?.();}
       };
       const vue=createApp(DirectorWidget,{initial:stateWidget.value||'{}',onChange:update});
       mounted=vue.mount(container);

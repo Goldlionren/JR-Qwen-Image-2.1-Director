@@ -79,6 +79,7 @@ class DirectorTests(unittest.TestCase):
         for value in ['<image1>','<image2>','72.0','do not rotate the pose guide a second time']:
             self.assertIn(value,text)
         self.assertNotIn('<sks>',text);self.assertIn('right arm raised',pose)
+        self.assertIn('walking-like stride',build_prompt(apply_preset(default_state(),'Walking'))[2])
         s['actor']['position']=[1,0,0]
         self.assertNotEqual(json.loads(build_prompt(s)[1])['effective_relative_azimuth'],72)
 

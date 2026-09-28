@@ -30,11 +30,12 @@ else:
     if args.case=='right':s['camera']['azimuth']=90
     elif args.case=='back':s['camera']['azimuth']=180
     elif args.case=='quarter':s['camera']['azimuth']=45
-    elif args.case in ('raised','walking','asymmetric'):
+    elif args.case in ('raised','walking','walking-quarter','asymmetric'):
         import sys
         sys.path.insert(0,str(Path(__file__).resolve().parent.parent))
         from director.state import apply_preset
-        s=apply_preset(s,{'raised':'Right Arm Raised','walking':'Walking','asymmetric':'Asymmetric'}[args.case])
+        s=apply_preset(s,{'raised':'Right Arm Raised','walking':'Walking','walking-quarter':'Walking','asymmetric':'Asymmetric'}[args.case])
+        if args.case=='walking-quarter':s['camera']['azimuth']=45
     graph['6']['inputs'].update(director_state=json.dumps(s),width=args.resolution,height=args.resolution)
 response=request('/prompt',{'prompt':graph,'client_id':'qwen-director-generation-test'})
 pid=response['prompt_id'];print('Queued',pid,'case',args.case,flush=True)

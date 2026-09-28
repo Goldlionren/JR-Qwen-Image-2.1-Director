@@ -46,7 +46,10 @@ def pose_description(state):
     lean = math.degrees(math.acos(float(np.clip(torso[1]/np.linalg.norm(torso),-1,1))))
     if lean > 10:
         phrases.append(f"torso leaning {lean:.0f} degrees")
-    if max(abs(p[f"{side}_ankle"][1]) for side in ("left","right")) < .15 and lean < 20:
+    stride = abs(p['left_ankle'][2]-p['right_ankle'][2])
+    if stride > .25:
+        phrases.insert(0, "a walking-like stride, with the legs separated in depth; change the leg positions from the reference image")
+    elif max(abs(p[f"{side}_ankle"][1]) for side in ("left","right")) < .15 and lean < 20:
         phrases.insert(0, "standing")
     return "; ".join(phrases) + "."
 
@@ -85,10 +88,13 @@ def build_prompt(state, subject_type="character", background_mode="preserve", fr
               f"The camera is {abs(eye_angle):.1f} degrees {'above' if eye_angle >= 0 else 'below'} the subject's eye level. "
               f"Use a {frame} composition and {c['fov']:.1f}-degree vertical field of view. "
               f"Camera roll: {c['roll']:.1f} degrees.\n\n"
-              f"The body pose is: {pose} Actor root pitch: {a['pitch']:.1f} degrees; roll: {a['roll']:.1f} degrees.\n\n"
+              f"The body pose is: {pose} Actor root pitch: {a['pitch']:.1f} degrees; roll: {a['roll']:.1f} degrees. "
+              "Replace the source pose with this target pose, including the legs and head, while preserving the subject's appearance.\n\n"
               "Reconstruct newly visible geometry consistently. Preserve identity, facial structure, hairstyle, body proportions, "
               "clothing, accessories, colors, materials and visual style from <image1>. Do not redesign or replace the subject "
               "or change the outfit. " + background)
+    if frame == "full body":
+        prompt += " Include the entire head, both hands and both feet inside the frame, with clear margin around all limbs. Do not crop raised hands."
     info = json.dumps({"azimuth": c["azimuth"], "elevation": c["elevation"], "distance": c["distance"], "fov": c["fov"],
                        "relative_azimuth": (c["azimuth"]-a["yaw"]) % 360, "effective_relative_azimuth": round(relative,3),
                        "eye_level_elevation": round(eye_angle,3), "view": label, "framing": frame}, indent=2)

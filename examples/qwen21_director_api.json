@@ -34,7 +34,7 @@
   "5": {
     "class_type": "LoadImage",
     "inputs": {
-      "image": "example.png"
+      "image": "qwen21_director_reference_20260928.png"
     }
   },
   "6": {
