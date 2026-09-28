@@ -2,7 +2,7 @@ param([Parameter(Mandatory=$true)][string]$ComfyRoot)
 $ErrorActionPreference = 'Stop'
 $source = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $custom = (Resolve-Path -LiteralPath (Join-Path $ComfyRoot 'custom_nodes')).Path
-$target = Join-Path $custom 'ComfyUI-QwenImage21-Director'
+$target = Join-Path $custom 'JR-Qwen-Image-2.1-Director'
 if (!(Test-Path -LiteralPath (Join-Path $source 'web/dist/director.js'))) { throw 'Build first: npm ci; npm run build' }
 if (Test-Path -LiteralPath $target) {
     $item = Get-Item -LiteralPath $target

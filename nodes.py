@@ -11,7 +11,7 @@ class QwenImage21Director(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="QwenImage21Director",
-            display_name="Qwen Image 2.1 Director",
+            display_name="JR Qwen Image 2.1 Director",
             category="image/director",
             description="Direct a camera and a body rig; render pose guides without a model or browser.",
             inputs=[

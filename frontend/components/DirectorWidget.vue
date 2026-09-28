@@ -56,7 +56,7 @@ defineExpose({load,getState:()=>JSON.stringify(state)});
 </script>
 <template>
  <section class="qd-director" @pointerdown.stop @wheel.stop @keydown.stop="keydown">
-  <header class="qd-header"><div><span class="qd-eyebrow">QWEN IMAGE 2.1</span><strong>Director <small>导演台</small></strong></div><span class="qd-badge">BODY RIG · 01</span></header>
+  <header class="qd-header"><div><span class="qd-eyebrow">JR Qwen Image 2.1 Director</span><strong>导演台 <small>Director</small></strong></div><span class="qd-badge">BODY RIG · 01</span></header>
   <nav class="qd-toolbar"><div class="qd-tabs"><button v-for="mode in modes" :key="mode" :class="{active:state.ui.mode===mode}" @click="state.ui.mode=mode">{{mode}} <small>{{mode==='CAMERA'?'摄影机':mode==='ACTOR'?'人物':'姿态'}}</small></button></div><div><button title="Undo" :disabled="undoCount<1" @click="undo">↶</button><button title="Redo" :disabled="redoCount<1" @click="redo">↷</button><button @click="exportJson">JSON</button></div></nav>
   <div class="qd-workspace">
    <aside class="qd-panel">

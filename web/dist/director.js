@@ -25879,10 +25879,10 @@ const wy = { class: "qd-number" }, Ay = ["aria-label", "value", "min", "max", "s
     }, [
       O[36] || (O[36] = Mt("header", { class: "qd-header" }, [
         Mt("div", null, [
-          Mt("span", { class: "qd-eyebrow" }, "QWEN IMAGE 2.1"),
+          Mt("span", { class: "qd-eyebrow" }, "JR Qwen Image 2.1 Director"),
           Mt("strong", null, [
-            On("Director "),
-            Mt("small", null, "导演台")
+            On("导演台 "),
+            Mt("small", null, "Director")
           ])
         ]),
         Mt("span", { class: "qd-badge" }, "BODY RIG · 01")
@@ -26169,7 +26169,7 @@ Gc.href = new URL(
 document.head.append(Gc);
 const rl = /* @__PURE__ */ new WeakMap();
 Kc.registerExtension({
-  name: "QwenImage21.Director",
+  name: "JR.QwenImage21.Director",
   nodeCreated(n) {
     var t;
     (n.comfyClass || ((t = n.constructor) == null ? void 0 : t.comfyClass)) === "QwenImage21Director" && (function() {

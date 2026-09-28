@@ -7,6 +7,11 @@ Python 3.13.12, PyTorch 2.12.1+cu130. Existing scheduled task:
 `ComfyUI 3060 Production`. Restarted through the task after verifying an idle queue.
 Installed as a junction from the specified development repository. No Core patch or environment upgrade.
 
+Branding updated to **JR Qwen Image 2.1 Director**. The installation junction is
+`JR-Qwen-Image-2.1-Director`; the existing `QwenImage21Director` ID is preserved.
+After the rename, production registration, the visible node/widget titles and
+execution of the existing 768×512 validation workflow were verified again.
+
 ## Automated checks
 
 - Python unittest: 9 tests passed.

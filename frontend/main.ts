@@ -10,7 +10,7 @@ import './style.css';
 const style=document.createElement('link');style.rel='stylesheet';style.href=new URL(/* @vite-ignore */ './director.css',import.meta.url).href;document.head.append(style);
 const controllers=new WeakMap<object,{restore:()=>void;dispose:()=>void}>();
 app.registerExtension({
-  name:'QwenImage21.Director',
+  name:'JR.QwenImage21.Director',
   nodeCreated(node:any) {
     if((node.comfyClass||node.constructor?.comfyClass)!=='QwenImage21Director')return;
     (function(this:any) {

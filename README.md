@@ -1,4 +1,4 @@
-# Qwen Image 2.1 Director
+# JR Qwen Image 2.1 Director
 
 在一个 ComfyUI 节点里摆人物、转摄影机、检查最终投影，并输出 Qwen 2.1 指令和姿态参考图。
 
@@ -14,13 +14,14 @@
 
 ## Installation / 安装
 
-将整个目录放入 `ComfyUI/custom_nodes/ComfyUI-QwenImage21-Director`，然后重启 ComfyUI，刷新浏览器。
+将 [GitHub 仓库](https://github.com/Goldlionren/JR-Qwen-Image-2.1-Director) 克隆到 `ComfyUI/custom_nodes/JR-Qwen-Image-2.1-Director`，然后重启 ComfyUI，刷新浏览器。
 发行目录已经包含 `web/dist`，使用者无需 Node.js，也无需安装额外 Python 包。
 
 测试基线：ComfyUI **0.37.0**（`8d534945`）、frontend **1.53.6**、Python **3.13.12**、PyTorch **2.12.1+cu130**，支持 Vue nodes。
 使用 ComfyUI V3 API。更旧版本尚未验证。本项目没有修改 Core。
 
-菜单：`image → director → Qwen Image 2.1 Director`。
+菜单：`image → director → JR Qwen Image 2.1 Director`。
+内部节点 ID 保留为 `QwenImage21Director`，兼容更名前保存的工作流；项目与界面名称统一使用 JR 前缀。
 首次试用可打开 [`examples/director_pose_only.json`](examples/director_pose_only.json)，不加载模型即可运行。
 
 ## Development Setup / 开发
@@ -132,7 +133,7 @@ V3 节点仅做参数桥接与 IMAGE tensor 转换。没有 sampler、模型或 
 ## License / Third-party references
 
 本项目源代码采用 MIT。Vue 与 Three.js 采用 MIT；分发许可证见 [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES.md)。
-Inspired by the interaction concepts of ComfyUI-qwenmultiangle and ComfyUI-3D-OpenPose-Editor-DW, but implemented as a separate Qwen-Image 2.1 Director architecture.
+Inspired by the interaction concepts of ComfyUI-qwenmultiangle and ComfyUI-3D-OpenPose-Editor-DW, but implemented as a separate JR Qwen Image 2.1 Director architecture.
 
 - [ComfyUI-qwenmultiangle](https://github.com/jtydhr88/ComfyUI-qwenmultiangle)：参考 Vue/TS/Three 与 DOM widget 架构。
 - [ComfyUI-3D-OpenPose-Editor-DW](https://github.com/LLAI-lab/ComfyUI-3D-OpenPose-Editor-DW)：参考交互与算法思路；未复制其未明确许可的源码。

@@ -10,7 +10,7 @@ sheet=Image.new('RGB',(4*tile,header+2*(tile+label)), '#10202e')
 draw=ImageDraw.Draw(sheet)
 try:font=ImageFont.truetype('segoeui.ttf',20);small=ImageFont.truetype('segoeui.ttf',15)
 except OSError:font=small=ImageFont.load_default()
-draw.text((20,12),'Qwen Image 2.1 Director | Local generation tests',font=font,fill='#ccebe8')
+draw.text((20,12),'JR Qwen Image 2.1 Director | Local generation tests',font=font,fill='#ccebe8')
 draw.text((20,42),'RTX 3060 / 512px / 25 steps / same identity reference / pose guide as image_2',font=small,fill='#83a9b8')
 for i,name in enumerate(cases):
     path=args.output_dir/(name+'_00001_.png')

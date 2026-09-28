@@ -1,6 +1,9 @@
 [project]
-name = "comfyui-qwenimage21-director"
+name = "jr-qwen-image-2.1-director"
 version = "0.1.0"
-description = "Independent camera, actor rig and pose projection for Qwen Image 2.1"
+description = "JR Qwen Image 2.1 Director — independent camera, actor rig and pose projection"
 requires-python = ">=3.10"
 license = "MIT"
+
+[project.urls]
+Repository = "https://github.com/Goldlionren/JR-Qwen-Image-2.1-Director"
