@@ -1,0 +1,39 @@
+{
+  "skeleton_type": "director_body_v1",
+  "joints": [
+    {"name":"pelvis","parent":null,"offset":[0,0.94,0]},
+    {"name":"spine","parent":"pelvis","offset":[0,0.20,0]},
+    {"name":"chest","parent":"spine","offset":[0,0.22,0]},
+    {"name":"neck","parent":"chest","offset":[0,0.17,0]},
+    {"name":"head","parent":"neck","offset":[0,0.16,0]},
+    {"name":"nose","parent":"head","offset":[0,0.015,0.105]},
+    {"name":"right_eye","parent":"head","offset":[-0.035,0.05,0.085]},
+    {"name":"left_eye","parent":"head","offset":[0.035,0.05,0.085]},
+    {"name":"right_ear","parent":"head","offset":[-0.085,0.025,0]},
+    {"name":"left_ear","parent":"head","offset":[0.085,0.025,0]},
+    {"name":"right_shoulder","parent":"chest","offset":[-0.19,0.10,0]},
+    {"name":"right_elbow","parent":"right_shoulder","offset":[-0.08,-0.28,0]},
+    {"name":"right_wrist","parent":"right_elbow","offset":[-0.02,-0.25,0.025]},
+    {"name":"left_shoulder","parent":"chest","offset":[0.19,0.10,0]},
+    {"name":"left_elbow","parent":"left_shoulder","offset":[0.08,-0.28,0]},
+    {"name":"left_wrist","parent":"left_elbow","offset":[0.02,-0.25,0.025]},
+    {"name":"right_hip","parent":"pelvis","offset":[-0.10,-0.04,0]},
+    {"name":"right_knee","parent":"right_hip","offset":[-0.02,-0.43,0.025]},
+    {"name":"right_ankle","parent":"right_knee","offset":[0,-0.43,-0.025]},
+    {"name":"left_hip","parent":"pelvis","offset":[0.10,-0.04,0]},
+    {"name":"left_knee","parent":"left_hip","offset":[0.02,-0.43,0.025]},
+    {"name":"left_ankle","parent":"left_knee","offset":[0,-0.43,-0.025]}
+  ],
+  "openpose_joints": ["nose","neck","right_shoulder","right_elbow","right_wrist","left_shoulder","left_elbow","left_wrist","right_hip","right_knee","right_ankle","left_hip","left_knee","left_ankle","right_eye","left_eye","right_ear","left_ear"],
+  "edges": [[1,2],[1,5],[2,3],[3,4],[5,6],[6,7],[1,8],[8,9],[9,10],[1,11],[11,12],[12,13],[1,0],[0,14],[14,16],[0,15],[15,17]],
+  "colors": [[255,0,0],[255,85,0],[255,170,0],[255,255,0],[170,255,0],[85,255,0],[0,255,0],[0,255,85],[0,255,170],[0,255,255],[0,170,255],[0,85,255],[0,0,255],[85,0,255],[170,0,255],[255,0,255],[255,0,170],[255,0,85]],
+  "presets": {
+    "Neutral Standing": {},
+    "T-Pose": {"right_shoulder":[0,0,-74.0546],"left_shoulder":[0,0,74.0546],"right_elbow":[0,0,-11.3715],"left_elbow":[0,0,11.3715]},
+    "A-Pose": {"right_shoulder":[0,0,-30],"left_shoulder":[0,0,30]},
+    "Right Arm Raised": {"right_shoulder":[0,0,-158],"right_elbow":[-18,0,-10]},
+    "Walking": {"right_hip":[-26,0,0],"left_hip":[22,0,0],"left_knee":[-32,0,0],"right_shoulder":[20,0,0],"left_shoulder":[-25,0,0],"left_elbow":[-20,0,0]},
+    "Sitting": {"left_hip":[-90,0,0],"right_hip":[-90,0,0],"left_knee":[90,0,0],"right_knee":[90,0,0]},
+    "Asymmetric": {"right_shoulder":[-35,0,-125],"right_elbow":[-70,0,0],"left_shoulder":[0,0,35],"left_elbow":[-90,0,0],"head":[0,25,0],"left_hip":[-20,0,0],"left_knee":[25,0,0]}
+  }
+}
