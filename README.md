@@ -10,12 +10,13 @@
 - Three.js 编辑舞台、摄影机视图和实时黑底 OpenPose 风格投影。
 - 站立、T-Pose、A-Pose、举手、行走、坐姿、不对称姿态预设；撤销/重做和 JSON 导入/导出。
 - 完整状态保存在 workflow 的 `director_state` 字符串输入中。Python 独立重算投影，API 执行无需浏览器。
+- **从图片导入姿态**：接入 IMAGE，DWPose 检测人物，选择人物后拟合为固定骨长的可编辑骨架；支持撤销和保存。
 - 自然语言提示词区分身份参考 `<image1>` 和最终姿态参考 `<image2>`；无旧 LoRA 触发词。
 
 ## Installation / 安装
 
 将 [GitHub 仓库](https://github.com/Goldlionren/JR-Qwen-Image-2.1-Director) 克隆到 `ComfyUI/custom_nodes/JR-Qwen-Image-2.1-Director`，然后重启 ComfyUI，刷新浏览器。
-发行目录已经包含 `web/dist`，使用者无需 Node.js，也无需安装额外 Python 包。
+发行目录已经包含 `web/dist`，使用者无需 Node.js。手动编辑无需额外 Python 包；图片识别的可选依赖与模型见下节。
 
 测试基线：ComfyUI **0.37.0**（`8d534945`）、frontend **1.53.6**、Python **3.13.12**、PyTorch **2.12.1+cu130**，支持 Vue nodes。
 使用 ComfyUI V3 API。更旧版本尚未验证。本项目没有修改 Core。
@@ -83,7 +84,34 @@ Actor 模式：左键拖动旋转人物 yaw；Shift + 左键拖动改变人物 X
 | `director_state` | STRING | version 1 完整 3D 状态，可重新导入 |
 
 尺寸支持 64–2048。`background_mode` 只影响生成指令，pose_control 固定黑底。
-可选 `image` 输入预留给身份参考接线，目前不显示参考图，也不参与人体重建；同一张图需要直接接给 Qwen 的 `image_1`。
+可选 `image` 用于明确点击后的姿态导入。普通运行只使用你已经编辑并保存的姿态，绝不会自动重识别并覆盖它。
+Qwen 的身份参考仍需直接接 `image_1`；姿态来源图和身份参考图可以是不同图片。
+
+## Image → Editable Pose / 图片导入姿态
+
+打开 [`examples/director_image_import.json`](examples/director_image_import.json)，无需加载 Qwen 模型。
+
+1. Load Image 上传图片，将 IMAGE 接到 Director 的 `image` 输入。
+2. 点击导演台上的 **从图片导入姿态**。只执行取得图片所需的上游节点，不运行 Director 后面的生成链。
+3. 预览中会显示人物编号，多人图选择目标人物，再点 **应用所选人物**。
+4. 人物变为 `Imported image` 姿态，进入 POSE 模式。可以修改关节、使用 IK、调整人物或摄影机，支持撤销/重做。
+5. 保存工作流即可保留导入及后续修改。普通 Run 使用已保存状态；换图后需再次主动导入。
+
+导入会重建姿态、人物变换和摄影机，按源图比例调整输出尺寸（32 像素步长）。源图中的人物位置也会保留；如需居中，可调整摄影机 target。
+批量 IMAGE 目前只取第 1 张；一张图最多检测 8 人，每次导入其中一人。检测先将最长边限制到 1024，界面报告的拟合误差以该检测图的像素为单位。
+未检测到人物时不修改当前姿态。低置信度的肢体关节保留默认局部角度，并显示缺失提示。
+
+**这是二维关键点到三维 rig 的近似拟合**，使用固定骨长和姿态先验；它不恢复真实的人体比例、摄像机参数或被遮挡的深度。侧身、交叉肢体、严重遮挡、非人类比例需要手动检查。手指和完整面部不会被导入。
+
+图片在本机处理。导入缓存最多 8 张、10 分钟，不把源图、检测缩略图或临时令牌写进 Director 状态；导入后的骨架状态独立于缓存。
+关闭导入面板停止等待；已经提交的上游任务可在 ComfyUI 队列中查看或取消。
+
+### Optional detector setup / 可选检测配置
+
+使用当前 ComfyUI 的 Python 环境安装缺少的 `onnxruntime`、`opencv-python-headless`（如已有 `cv2` 则无需重复安装 OpenCV）；依赖清单为 [`requirements-pose.txt`](requirements-pose.txt)。拟合使用 ComfyUI 已有的 SciPy。
+将官方 [DWPose ONNX 模型](https://github.com/IDEA-Research/DWPose/tree/onnx) `yolox_l.onnx` 和 `dw-ll_ucoco_384.onnx` 放进 `ComfyUI/models/dwpose/`。
+也会从 ComfyUI 配置的共享模型根目录查找已有文件；可用 `JR_DIRECTOR_POSE_MODELS` 环境变量指定模型目录。
+不会自动下载模型或改变 CUDA/PyTorch。检测使用 CPU，避免挤占生成模型的显存。本机已有模型和依赖已直接复用。
 
 ## Qwen Image 2.1 Workflow
 
@@ -123,12 +151,12 @@ V3 节点仅做参数桥接与 IMAGE tensor 转换。没有 sampler、模型或 
 - 自然语言的连续角度不是模型几何约束；双参考图也是指导，不等于 Pose ControlNet。
 - 实测玩具角色：侧面/45°和举手有效；正面行走腿部跟随较弱，背面鞋朝向不可靠，举手可能被裁切。请见验收记录，而不是将成功出图当作严格姿态达标。
 - 当前只输出 OpenPose 风格身体图；没有针对某一个 ControlNet 模型的逐项兼容验证。
-- 无完整手指、脚掌、面部 rig，无 DWPose 自动检测/导入，无自动 2D→3D 恢复。
+- 无完整手指、脚掌、面部 rig；DWPose 导入是近似 2D→rig 拟合，不是可靠的真实三维重建。
 - FK/IK 保持骨长，但没有人体关节角度限制、碰撞、脚底接地或躯干 IK；可以摆出不自然的姿态。
 - front/back 与完全重合的侧面肢体仍可能存在二维歧义；骨架颜色不代表身份或服装。
 - 新视角看不到的身份/服装细节需要模型猜测；图像参考比例和人体 rig 比例不同会影响服从程度。
 - `auto` framing 是基于关键关节可见性的粗略判断。
-- 不包含 multi-actor、timeline、video、训练 LoRA 或 ControlNet 安装。
+- 支持从多人图片中选择一人，不包含同一舞台的 multi-actor、timeline、video、训练 LoRA 或 ControlNet 安装。
 
 ## License / Third-party references
 

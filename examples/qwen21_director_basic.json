@@ -2,7 +2,7 @@
   "id": "00000000-0000-0000-0000-000000000000",
   "revision": 0,
   "last_node_id": 22,
-  "last_link_id": 23,
+  "last_link_id": 24,
   "nodes": [
     {
       "id": 1,
@@ -235,7 +235,8 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            2
+            2,
+            24
           ]
         },
         {
@@ -397,7 +398,7 @@
         {
           "name": "image",
           "type": "IMAGE",
-          "link": null
+          "link": 24
         }
       ],
       "outputs": [
@@ -589,6 +590,14 @@
       21,
       2,
       22,
+      0,
+      "IMAGE"
+    ],
+    [
+      24,
+      11,
+      0,
+      21,
       0,
       "IMAGE"
     ]

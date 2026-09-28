@@ -47,7 +47,11 @@
       "background_mode": "plain white",
       "framing": "auto",
       "prompt_prefix": "",
-      "prompt_suffix": ""
+      "prompt_suffix": "",
+      "image": [
+        "5",
+        0
+      ]
     }
   },
   "7": {

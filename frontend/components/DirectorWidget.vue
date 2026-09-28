@@ -4,7 +4,10 @@ import { clone, defaults, deserialize, preset, rig, wrap, type DirectorState, ty
 import { DirectorScene } from '../three/DirectorScene';
 import { makeRig,updateRig,worldPoints } from '../three/geometry';
 import NumberField from './NumberField.vue';
-const props=defineProps<{initial:string;onChange:(value:string)=>void}>();
+import type { Detection, PoseFit } from '../imageImport';
+const props=defineProps<{initial:string;onChange:(value:string)=>void;
+  detectImage?:(progress:(s:string)=>void,signal:AbortSignal)=>Promise<Detection>;
+  fitPerson?:(token:string,index:number,state:string,signal:AbortSignal)=>Promise<PoseFit>}>();
 const state=reactive<DirectorState>(defaults());
 const host=ref<HTMLElement>(), preview=ref<HTMLCanvasElement>(), error=ref(''),jsonOpen=ref(false),jsonText=ref('');
 let stage:DirectorScene|undefined,restoring=false,timer:ReturnType<typeof setTimeout>|undefined;
@@ -14,7 +17,36 @@ const angles=['Front','Front Right ¾','Right','Back Right ¾','Back','Back Left
 const modes:Mode[]=['CAMERA','ACTOR','POSE'];
 const relative=computed(()=>wrap(state.camera.azimuth-state.actor.yaw).toFixed(1));
 const hint=computed(()=>state.ui.mode==='CAMERA'?'左键转摄影机 · 滚轮推拉 · Shift 拖动目标':state.ui.mode==='ACTOR'?'左键转人物 · Shift 拖动位置':'点击关节旋转 · 拖动手腕/脚踝执行 IK');
+const importOpen=ref(false),importBusy=ref(false),importStatus=ref(''),importError=ref(''),importNotice=ref('');
+const detection=ref<Detection>(),personIndex=ref(0);
+let importController:AbortController|undefined;
+async function detectImage() {
+  if(!props.detectImage)return;
+  importController?.abort();importController=new AbortController();
+  const controller=importController;
+  importOpen.value=true;importBusy.value=true;importError.value='';detection.value=undefined;
+  try {const result=await props.detectImage(s=>importStatus.value=s,controller.signal);
+    if(controller.signal.aborted)return;
+    detection.value=result;personIndex.value=0;
+    importStatus.value=result.people.length?`检测到 ${result.people.length} 人；请选择要导入的人物。`:'未检测到清晰人物，请换图后重新识别。';
+  } catch(e) {if(!controller.signal.aborted)importError.value=String(e);}
+  finally {if(importController===controller)importBusy.value=false;}
+}
+function closeImport() {importController?.abort();importBusy.value=false;importOpen.value=false;}
+async function applyPerson() {
+  if(!detection.value||!props.fitPerson)return;
+  const controller=importController=new AbortController();
+  importBusy.value=true;importError.value='';importStatus.value='正在拟合可编辑骨架…';
+  try {const result=await props.fitPerson(detection.value.token,personIndex.value,JSON.stringify(state),controller.signal);
+    if(controller.signal.aborted)return;
+    flush();restore(JSON.stringify(result.state));props.onChange(JSON.stringify(state));remember();
+    importNotice.value=`已导入人物 ${personIndex.value+1} · ${result.visible_keypoints} 个关键点 · 拟合误差 ${result.fit_error_pixels}px。${result.warnings.join(' ')}`;
+    importOpen.value=false;
+  } catch(e) {if(!controller.signal.aborted)importError.value=String(e);}
+  finally {if(importController===controller)importBusy.value=false;}
+}
 function restore(value:string) {
+  importNotice.value='';
   try {const next=deserialize(value);restoring=true;Object.assign(state,next);stage?.setState(state);error.value='';}
   catch(e) {error.value=String(e);} finally {restoring=false;}
 }
@@ -51,13 +83,24 @@ onMounted(()=>{
   restore(props.initial);remember();
   try {stage=new DirectorScene(host.value!,preview.value!,state,commit);}catch(e){error.value=`3D 初始化失败：${String(e)}`;}
 });
-onBeforeUnmount(()=>{clearTimeout(timer);stage?.dispose();});
+onBeforeUnmount(()=>{importController?.abort();clearTimeout(timer);stage?.dispose();});
 defineExpose({load,getState:()=>JSON.stringify(state)});
 </script>
 <template>
  <section class="qd-director" @pointerdown.stop @wheel.stop @keydown.stop="keydown">
   <header class="qd-header"><div><span class="qd-eyebrow">JR Qwen Image 2.1 Director</span><strong>导演台 <small>Director</small></strong></div><span class="qd-badge">BODY RIG · 01</span></header>
-  <nav class="qd-toolbar"><div class="qd-tabs"><button v-for="mode in modes" :key="mode" :class="{active:state.ui.mode===mode}" @click="state.ui.mode=mode">{{mode}} <small>{{mode==='CAMERA'?'摄影机':mode==='ACTOR'?'人物':'姿态'}}</small></button></div><div><button title="Undo" :disabled="undoCount<1" @click="undo">↶</button><button title="Redo" :disabled="redoCount<1" @click="redo">↷</button><button @click="exportJson">JSON</button></div></nav>
+  <nav class="qd-toolbar"><div class="qd-tabs"><button v-for="mode in modes" :key="mode" :class="{active:state.ui.mode===mode}" @click="state.ui.mode=mode">{{mode}} <small>{{mode==='CAMERA'?'摄影机':mode==='ACTOR'?'人物':'姿态'}}</small></button></div><div><button :disabled="!props.detectImage||importBusy" @click="detectImage">从图片导入姿态</button><button title="Undo" :disabled="undoCount<1" @click="undo">↶</button><button title="Redo" :disabled="redoCount<1" @click="redo">↷</button><button @click="exportJson">JSON</button></div></nav>
+  <div v-if="importOpen" class="qd-import" role="dialog" aria-label="从图片导入姿态">
+   <div class="qd-import-heading"><h3>从图片导入姿态</h3><button @click="closeImport">关闭</button></div>
+   <p>识别 image 输入中的人物。应用后会重建姿态、人物变换和匹配图片比例的摄影机；可以撤销。</p>
+   <p role="status">{{importStatus}}</p>
+   <img v-if="detection" :src="detection.preview" alt="检测到的人物编号预览"/>
+   <p v-if="detection && detection.batch_size>1">输入为多张图片，本次使用第 1 张。</p>
+   <label v-if="detection?.people.length" class="qd-select">选择人物<select aria-label="选择导入人物" v-model.number="personIndex" :disabled="importBusy"><option v-for="person in detection.people" :key="person.index" :value="person.index">人物 {{person.index+1}}</option></select></label>
+   <p class="qd-tip">单图只提供二维关键点，深度为近似拟合。遮挡关节、前后关系与人物比例可能需要手动调整。</p>
+   <div v-if="importError" role="alert" class="qd-error">{{importError}}</div>
+   <div class="qd-import-actions"><button :disabled="importBusy" @click="detectImage">重新识别</button><button :disabled="importBusy||!detection?.people.length" @click="applyPerson">应用所选人物</button></div>
+  </div>
   <div class="qd-workspace">
    <aside class="qd-panel">
     <template v-if="state.ui.mode==='CAMERA'">
@@ -83,7 +126,7 @@ defineExpose({load,getState:()=>JSON.stringify(state)});
     </template>
     <template v-else>
      <div class="qd-section-title">POSE RIG <span>固定骨长</span></div>
-     <label class="qd-select">Preset<select aria-label="Pose preset" :value="state.pose.preset" @change="posePreset(($event.target as HTMLSelectElement).value)"><option v-if="state.pose.preset==='Custom'">Custom</option><option v-for="(_,name) in rig.presets">{{name}}</option></select></label>
+     <label class="qd-select">Preset<select aria-label="Pose preset" :value="state.pose.preset" @change="posePreset(($event.target as HTMLSelectElement).value)"><option v-if="!(state.pose.preset in rig.presets)">{{state.pose.preset}}</option><option v-for="(_,name) in rig.presets">{{name}}</option></select></label>
      <label class="qd-select">Joint<select aria-label="Selected joint" v-model="state.ui.selected_joint"><option v-for="j in rig.joints" :value="j.name">{{j.name.replaceAll('_',' ')}}</option></select></label>
      <p class="qd-tip">肩、肘、髋、膝：旋转控制环。手腕、脚踝：在视图平面中拖动 IK 目标。右键转编辑视角。</p>
      <NumberField v-for="(axis,i) in ['X','Y','Z']" :label="`Joint ${axis}`" v-model="selected[i]" :min="-180" :max="180" :step=".1" unit="°" @update:model-value="state.pose.preset='Custom'"/>
@@ -96,6 +139,7 @@ defineExpose({load,getState:()=>JSON.stringify(state)});
   </div>
   <div v-if="jsonOpen" class="qd-json"><textarea aria-label="Director state JSON" v-model="jsonText" spellcheck="false"></textarea><button @click="importJson">Import state / 导入</button><span>复制 JSON 可保存或批量复用</span></div>
   <div v-if="error" class="qd-error" role="alert">{{error}}</div>
+  <details v-if="importNotice" class="qd-import-notice"><summary>图片姿态已导入 · 深度为近似值</summary>{{importNotice}}</details>
   <footer><span class="qd-status">●</span> Camera · Actor · Pose <span>独立控制 / 工作流自动保存</span></footer>
  </section>
 </template>

@@ -34,9 +34,12 @@ for link in base['links']:
     if link[0]==14:link[4]=3
 load=next(n for n in base['nodes'] if n['type']=='LoadImage');load['widgets_values']=[args.reference,'image']
 node=director_node();node['outputs'][0]['links']=[21];node['outputs'][1]['links']=[22];node['outputs'][2]['links']=[23]
+node['inputs'][0]['link']=24
+load['outputs'][0]['links'].append(24)
 base['nodes'] += [node,preview_node()]
 base['links'] += [[21,21,0,6,4,'STRING'],[22,21,1,6,2,'IMAGE'],[23,21,2,22,0,'IMAGE']]
-base['last_node_id']=22;base['last_link_id']=23
+base['links'].append([24,load['id'],0,21,0,'IMAGE'])
+base['last_node_id']=22;base['last_link_id']=24
 save=next(n for n in base['nodes'] if n['type']=='SaveImage');save['widgets_values']=['Qwen21Director']
 Path('examples').mkdir(exist_ok=True)
 Path('examples/qwen21_director_basic.json').write_text(json.dumps(base,indent=2),encoding='utf-8')
@@ -52,7 +55,7 @@ api={
  '3':{'class_type':'CLIPLoader','inputs':{'clip_name':'qwen3vl_8b_int8_convrot.safetensors','type':'qwen_image','device':'default'}},
  '4':{'class_type':'VAELoader','inputs':{'vae_name':'qwen_image_2.1_vae_bf16.safetensors'}},
  '5':{'class_type':'LoadImage','inputs':{'image':args.reference}},
- '6':{'class_type':'QwenImage21Director','inputs':{'director_state':json.dumps(state),'width':1024,'height':1024,'subject_type':'character','background_mode':'plain white','framing':'auto','prompt_prefix':'','prompt_suffix':''}},
+ '6':{'class_type':'QwenImage21Director','inputs':{'director_state':json.dumps(state),'width':1024,'height':1024,'subject_type':'character','background_mode':'plain white','framing':'auto','prompt_prefix':'','prompt_suffix':'','image':['5',0]}},
  '7':{'class_type':'TextEncodeQwenImage21','inputs':{'clip':['3',0],'vae':['4',0],'prompt':['6',0],'negative_prompt':'','resolution':1024,'images.image_1':['5',0],'images.image_2':['6',1]}},
  '8':{'class_type':'KSampler','inputs':{'model':['2',0],'positive':['7',0],'negative':['7',1],'latent_image':['7',2],'seed':21001,'steps':25,'cfg':1.,'sampler_name':'euler','scheduler':'simple','denoise':1.}},
  '9':{'class_type':'VAEDecode','inputs':{'samples':['8',0],'vae':['4',0]}},

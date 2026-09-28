@@ -22,6 +22,21 @@ execution of the existing 768×512 validation workflow were verified again.
 - Input validation: unsupported versions, non-finite values, invalid dimensions/joints rejected.
 - Render: behind-camera exclusion, near-plane clipping, repeatable float32 image output.
 
+## Image import — v0.2.0
+
+- New total: 13 Python tests and 6 frontend tests passed; typecheck/build passed.
+- Reused the existing `yolox_l.onnx`, `dw-ll_ucoco_384.onnx`, ONNX Runtime 1.29.0 and OpenCV. No environment upgrades or new model downloads.
+- Actual ComfyUI capture → detection → fit routes: one reference detected as 1 person, a two-reference synthetic fixture as 2 people, blank white image as 0 people. Both people in the pair could be fitted independently.
+- Browser: connected Load Image → Director.image, detected two numbered people, selected person 2 and applied. The widget entered POSE / `Imported image`; output aspect changed to 1024×512.
+- Undo restored Neutral Standing and 1024×1024; redo restored the imported pose and 1024×512. Edited right shoulder Z to -40°, ran normal execution, saved and reloaded: the edited angle, Custom pose and 1024×512 all persisted.
+- Execution isolation test verifies that import submits only image ancestors plus an internal capture sink; downstream Qwen encoding/sampling is excluded.
+- Neutral toy reference: approximately 1.0 s detection + fit; 3.52 px landmark fit error at 512×512. Walking three-quarter: 1.44 s / 3.65 px; raised arm: 1.07 s / 2.58 px. These are errors relative to detected keypoints, **not ground-truth anatomy or measured 3D accuracy**.
+- Imported rig preserves all original bone lengths. Missing landmarks, non-finite input, inadequate body detections and person overlap handling are covered by tests.
+- Depth is ambiguous; this is a regularized image-plane fit. The supplied toy cases and synthetic geometry do not establish accuracy across real people, unusual proportions or heavy occlusion.
+
+![Choose a detected person](image-import-people.png)
+![Imported pose, edited and executed](image-import-edited.png)
+
 ## Production integration
 
 - Node appears in `/object_info/QwenImage21Director`, with all six specified outputs.

@@ -4,6 +4,7 @@ import { app } from '/scripts/app.js';
 import { createApp } from 'vue';
 import DirectorWidget from './components/DirectorWidget.vue';
 import { deserialize } from './state';
+import { detectConnectedImage, fitDetectedPerson } from './imageImport';
 import './style.css';
 
 // ComfyUI serves extension assets relative to this entry point.
@@ -36,7 +37,9 @@ app.registerExtension({
           this.setDirtyCanvas?.(true,true);
         } finally {canvas?.emitAfterChange?.();}
       };
-      const vue=createApp(DirectorWidget,{initial:stateWidget.value||'{}',onChange:update});
+      const vue=createApp(DirectorWidget,{initial:stateWidget.value||'{}',onChange:update,
+        detectImage:(progress:(s:string)=>void,signal:AbortSignal)=>detectConnectedImage(this,progress,signal),
+        fitPerson:fitDetectedPerson});
       mounted=vue.mount(container);
       const dom=this.addDOMWidget('director_stage','director_stage',container,{serialize:false,hideOnZoom:false});
       dom.computeSize=()=>[700,700];dom.options.getMinHeight=()=>700;dom.options.getMaxHeight=()=>700;

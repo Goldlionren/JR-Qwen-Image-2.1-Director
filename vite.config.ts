@@ -6,6 +6,6 @@ export default defineConfig({
   build: {
     outDir: 'web/dist', emptyOutDir: true,
     lib: { entry: 'frontend/main.ts', formats: ['es'], fileName: () => 'director.js', cssFileName: 'director' },
-    rollupOptions: { external: ['/scripts/app.js'] },
+    rollupOptions: { external: ['/scripts/app.js','/scripts/api.js'] },
   },
 });

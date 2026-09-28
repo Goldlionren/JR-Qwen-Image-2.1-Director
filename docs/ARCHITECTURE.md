@@ -39,4 +39,27 @@ rotation applied to the camera-to-actor vector (handles translation/pitch/roll).
 6. Example based on local Qwen 2.1 workflow; real generation if local models are available.
 
 Persistence and Python geometry are built early so phase 3/5 cannot diverge.
-No Core changes, dependency upgrades, inference reimplementation or downloaded model required.
+No Core changes, dependency upgrades or Qwen inference reimplementation required.
+
+## Image import (v0.2.0)
+
+The frontend serializes the current graph and extracts just the connected IMAGE
+source and its ancestors. A transient `JRDirectorImageCapture` output sink receives
+the real evaluated tensor, so Load Image, resizing and other upstream transforms
+use ComfyUI's own execution semantics. Downstream Director/Qwen nodes are excluded.
+Capture requests have unique IDs and publish an opaque token through UI output.
+Tokens expire after ten minutes; at most eight images (longest edge 1024) are kept
+in RAM. The hidden capture helper is never added to the saved workflow.
+
+`image_import.py` exposes bounded detect/fit routes and serializes heavy operations
+off the event loop. `director/detection.py` runs existing YOLOX/DWPose ONNX weights
+on CPU and returns COCO body landmarks. `director/pose_import.py` initializes a
+planar articulated pose and minimizes weighted image-plane reprojection error with
+angle/depth regularization. FK rest offsets never change. Depth is approximate.
+
+Detection does not mutate the editor. Only explicit application of a selected
+person changes state, with an undo snapshot, native size synchronization and graph
+dirty notification. Normal Director execution continues to use only serialized
+state, preventing later image changes/runs from overwriting manual edits. Source
+images, thumbnails and tokens are not persisted in Director state. Optional model
+files and detector dependencies are required for this feature on a new install.

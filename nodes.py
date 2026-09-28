@@ -23,7 +23,7 @@ class QwenImage21Director(io.ComfyNode):
                 io.Combo.Input("framing", options=["auto", "full body", "medium full", "upper body", "headshot", "close-up"], default="auto"),
                 io.String.Input("prompt_prefix", default="", multiline=True, optional=True),
                 io.String.Input("prompt_suffix", default="", multiline=True, optional=True),
-                io.Image.Input("image", optional=True, tooltip="Optional identity reference; connect the same image to Qwen image_1."),
+                io.Image.Input("image", optional=True, tooltip="Connect an image, then click 从图片导入姿态 in the Director. Import is explicit and never overwrites edits during normal execution. Connect the identity reference separately to Qwen image_1."),
             ],
             outputs=[io.String.Output("director_prompt"), io.Image.Output("pose_control"),
                      io.Image.Output("pose_preview"), io.String.Output("camera_info"),
