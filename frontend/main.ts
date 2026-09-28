@@ -3,28 +3,33 @@
 import { app } from '/scripts/app.js';
 import { createApp } from 'vue';
 import DirectorWidget from './components/DirectorWidget.vue';
-import { defaults, deserialize } from './state';
+import { deserialize } from './state';
 import './style.css';
 
 // ComfyUI serves extension assets relative to this entry point.
-const style=document.createElement('link');style.rel='stylesheet';style.href=new URL('./director.css',import.meta.url).href;document.head.append(style);
+const style=document.createElement('link');style.rel='stylesheet';style.href=new URL(/* @vite-ignore */ './director.css',import.meta.url).href;document.head.append(style);
 const controllers=new WeakMap<object,{restore:()=>void;dispose:()=>void}>();
 app.registerExtension({
   name:'QwenImage21.Director',
-  beforeRegisterNodeDef(nodeType:any,nodeData:any) {
-    if(nodeData.name!=='QwenImage21Director')return;
-    const created=nodeType.prototype.onNodeCreated;
-    nodeType.prototype.onNodeCreated=function(...args:any[]) {
-      const result=created?.apply(this,args);
+  nodeCreated(node:any) {
+    if((node.comfyClass||node.constructor?.comfyClass)!=='QwenImage21Director')return;
+    (function(this:any) {
       const stateWidget=this.widgets.find((w:any)=>w.name==='director_state');
-      if(!stateWidget)return result;
+      if(!stateWidget)throw Error('Director state widget was not created');
       // Keep the actual STRING input as the serialized source of truth.
       stateWidget.type='hidden';stateWidget.computeSize=()=>[0,-4];
+      stateWidget.hidden=true;
       if(stateWidget.inputEl)stateWidget.inputEl.style.display='none';
-      const container=document.createElement('div');container.style.width='100%';
+      const container=document.createElement('div');container.style.width='100%';container.style.height='100%';
       let mounted:any;
       let loading=false;
-      const update=(value:string)=>{if(loading)return;stateWidget.value=value;this.setDirtyCanvas?.(true,true);};
+      const update=(value:string)=>{
+        if(loading)return;
+        stateWidget.value=value;
+        const render=JSON.parse(value).render;
+        for(const key of ['width','height']) {const widget=this.widgets.find((w:any)=>w.name===key);if(widget&&widget.value!==render[key])widget.value=render[key];}
+        this.setDirtyCanvas?.(true,true);
+      };
       const vue=createApp(DirectorWidget,{initial:stateWidget.value||'{}',onChange:update});
       mounted=vue.mount(container);
       const dom=this.addDOMWidget('director_stage','director_stage',container,{serialize:false,hideOnZoom:false});
@@ -46,8 +51,7 @@ app.registerExtension({
       this.onRemoved=function(...args:any[]){vue.unmount();controllers.delete(this);return oldRemoved?.apply(this,args);};
       controllers.set(this,{restore,dispose:()=>vue.unmount()});
       this.setSize([Math.max(this.size[0],750),Math.max(this.size[1],1040)]);
-      return result;
-    };
+    }).call(node);
   },
   loadedGraphNode(node:any){controllers.get(node)?.restore();},
 });

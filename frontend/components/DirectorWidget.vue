@@ -2,6 +2,7 @@
 import { computed, onMounted, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { clone, defaults, deserialize, preset, rig, wrap, type DirectorState, type Mode } from '../state';
 import { DirectorScene } from '../three/DirectorScene';
+import { makeRig,updateRig,worldPoints } from '../three/geometry';
 import NumberField from './NumberField.vue';
 const props=defineProps<{initial:string;onChange:(value:string)=>void}>();
 const state=reactive<DirectorState>(defaults());
@@ -35,6 +36,11 @@ function shot(name:string) {
   const [distance,y]=name==='Full Body'?[3.1,.95]:name==='Medium'?[1.8,1.3]:[.85,1.63];
   state.camera.target=[p[0],p[1]+y*scale,p[2]];state.camera.distance=distance*scale;state.camera.fov=40;
 }
+function eyeLevel() {
+  const r=makeRig();updateRig(r,state);const head=worldPoints(r).head;
+  const ratio=(head.y-state.camera.target[1])/state.camera.distance;
+  state.camera.elevation=Math.asin(Math.max(-.9998,Math.min(.9998,ratio)))*180/Math.PI;
+}
 function importJson() {try {deserialize(jsonText.value);restore(jsonText.value);props.onChange(JSON.stringify(state));remember();jsonOpen.value=false;}catch(e){error.value=String(e);}}
 function exportJson() {jsonText.value=JSON.stringify(state,null,2);jsonOpen.value=!jsonOpen.value;}
 function keydown(e:KeyboardEvent) {
@@ -62,7 +68,7 @@ defineExpose({load,getState:()=>JSON.stringify(state)});
      <NumberField label="Distance" v-model="state.camera.distance" :min=".2" :max="15" :step=".01"/>
      <NumberField label="FOV" v-model="state.camera.fov" :min="10" :max="120" :step=".1" unit="°"/>
      <NumberField label="Camera roll" v-model="state.camera.roll" :min="-180" :max="180" :step=".1" unit="°"/>
-     <div class="qd-presets"><button @click="state.camera.elevation=-20">Low</button><button @click="state.camera.elevation=0">Level</button><button @click="state.camera.elevation=20">Elevated</button><button @click="state.camera.elevation=55">High</button></div>
+     <div class="qd-presets"><button @click="state.camera.elevation=-20">Low</button><button @click="eyeLevel">Eye Level</button><button @click="state.camera.elevation=20">Elevated</button><button @click="state.camera.elevation=55">High</button></div>
      <div class="qd-presets"><button v-for="p in ['Full Body','Medium','Close']" @click="shot(p)">{{p}}</button></div>
      <details><summary>Target / 注视点</summary><NumberField v-for="(axis,i) in ['X','Y','Z']" :label="`Target ${axis}`" v-model="state.camera.target[i]" :min="-10" :max="10" :step=".01"/></details>
     </template>

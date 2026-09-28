@@ -12,6 +12,7 @@ export class DirectorScene {
   private renderer:T.WebGLRenderer;
   private editor=new T.PerspectiveCamera(45,1,.05,200);
   private camera=new T.PerspectiveCamera();
+  private guideCamera=new T.PerspectiveCamera();
   private orbit:OrbitControls;
   private gizmo:TransformControls;
   private helper:T.CameraHelper;
@@ -33,13 +34,13 @@ export class DirectorScene {
     this.renderer.setPixelRatio(Math.min(devicePixelRatio,2)); this.renderer.setClearColor(0x0b151e);
     this.renderer.domElement.setAttribute('aria-label','3D Director stage'); this.renderer.domElement.style.touchAction='none';
     host.append(this.renderer.domElement);
-    this.editor.position.set(3.5,2.6,4.5);
+    this.editor.position.set(2.5,2.0,3.3);
     this.orbit=new OrbitControls(this.editor,this.renderer.domElement); this.orbit.target.set(0,.95,0);
     this.orbit.mouseButtons={LEFT:null as unknown as T.MOUSE,MIDDLE:T.MOUSE.PAN,RIGHT:T.MOUSE.ROTATE};
     this.orbit.enableZoom=false;this.orbit.update(); this.orbit.addEventListener('change',this.schedule);
     this.scene.add(this.grid,this.axes,this.actor.root,this.target,new T.HemisphereLight(0xd5faff,0x314051,2));
     const light=new T.DirectionalLight(0xffffff,2);light.position.set(2,4,3);this.scene.add(light);
-    this.helper=new T.CameraHelper(this.camera);this.scene.add(this.helper);
+    this.helper=new T.CameraHelper(this.guideCamera);this.scene.add(this.helper);
     const geom=new T.SphereGeometry(.026,12,8);
     for(const def of rig.joints) {
       const index=rig.openpose_joints.indexOf(def.name),color=index<0?0x91b6ca:new T.Color(`rgb(${rig.colors[index].join(',')})`);
@@ -72,7 +73,9 @@ export class DirectorScene {
   update() {
     if(this.disposed)return;
     this.syncing=true;
-    updateRig(this.actor,this.state);directorCamera(this.state,this.camera);this.helper.update();this.target.position.fromArray(this.state.camera.target);
+    updateRig(this.actor,this.state);directorCamera(this.state,this.camera);
+    this.guideCamera.copy(this.camera);this.guideCamera.far=this.state.camera.distance+.6;this.guideCamera.updateProjectionMatrix();this.guideCamera.updateMatrixWorld(true);
+    this.helper.update();this.target.position.fromArray(this.state.camera.target);
     const points=worldPoints(this.actor);
     for(const line of this.bones) { line.geometry.setFromPoints([points[line.userData.parent],points[line.userData.child]]); }
     for(const handle of this.handles) { const selected=handle.userData.joint===this.state.ui.selected_joint && this.state.ui.mode==='POSE';handle.scale.setScalar(selected?1.6:1); }
