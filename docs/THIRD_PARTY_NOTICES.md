@@ -1,5 +1,25 @@
 # Third-party notices
 
+## ComfyUI Qwen Image 2.1 Fun ControlNet backport
+
+`controlnet/model.py`, `controlnet/patch.py`, `controlnet/compat.py` and loader logic
+are adapted from [ComfyUI PR #16519](https://github.com/Comfy-Org/ComfyUI/pull/16519)
+by kijai and the ComfyUI contributors, pinned at
+`b0ab6a4c662a2e63fe2c0d7779dd06aeb62df3cf`.
+Upstream files: `comfy/ldm/qwen_image21/model.py` and
+`comfy_extras/nodes_model_patch.py`.
+
+Distributed under GNU GPL version 3 or later; complete license text is included in
+[licenses/ComfyUI-GPL-3.0.txt](licenses/ComfyUI-GPL-3.0.txt) and the root LICENSE.
+JR modifications (2026-09-28): project-local control classes, instance-scoped
+ModelPatcher compatibility method, strict 2.1 checkpoint validation, a bounded
+loader cache, and integration into the Director node. No Core files are replaced.
+
+The combined v0.3.0 distribution is GPL-3.0-or-later. Original Director components
+retain their MIT permissions and notice in [licenses/Director-MIT.txt](licenses/Director-MIT.txt).
+Third-party components retain their respective licenses. Model weights are not
+bundled; Qwen Research License applies to the Fun Union weights separately.
+
 ## DWPose / ONNX preprocessing reference
 
 The YOLOX decode and DWPose affine crop / SimCC conventions in

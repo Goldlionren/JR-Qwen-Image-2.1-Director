@@ -67,7 +67,7 @@ def infer_framing(state):
     return "close-up"
 
 
-def build_prompt(state, subject_type="character", background_mode="preserve", framing="auto"):
+def build_prompt(state, subject_type="character", background_mode="preserve", framing="auto", controlnet=False):
     c,a = state["camera"],state["actor"]
     pos, *_ = camera_basis(state)
     points,_ = forward_kinematics(state)
@@ -80,8 +80,10 @@ def build_prompt(state, subject_type="character", background_mode="preserve", fr
     pose = pose_description(state)
     background = {"preserve":"Preserve the environment from <image1>, reconstructing it consistently for the new view.",
                   "plain white":"Use a plain white background.", "neutral":"Use a simple neutral gray background."}[background_mode]
+    pose_source = ("Follow the supplied pose control for the final body pose and framing. " if controlnet else
+                   "Use <image2> only as the final projected body pose and framing reference. ")
     prompt = (f"Use <image1> as the strict identity and appearance reference. Re-render the same {subject_type}.\n\n"
-              "Use <image2> only as the final projected body pose and framing reference. Match its limb positions and body orientation. "
+              + pose_source + "Match its limb positions and body orientation. "
               "It already represents the requested camera view; do not rotate the pose guide a second time. "
               "Do not copy its skeleton colors, lines or black background.\n\n"
               f"View the subject from {label}, approximately {relative:.1f} degrees around the subject from their forward direction toward their right. "

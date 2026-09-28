@@ -11,6 +11,7 @@
 - 站立、T-Pose、A-Pose、举手、行走、坐姿、不对称姿态预设；撤销/重做和 JSON 导入/导出。
 - 完整状态保存在 workflow 的 `director_state` 字符串输入中。Python 独立重算投影，API 执行无需浏览器。
 - **从图片导入姿态**：接入 IMAGE，DWPose 检测人物，选择人物后拟合为固定骨长的可编辑骨架；支持撤销和保存。
+- **内置 Fun Union ControlNet**：项目内回移植 Qwen Image 2.1 控制分支，支持 INT8 convrot / BF16；无需安装上游 PR 或修改 ComfyUI Core。
 - 自然语言提示词区分身份参考 `<image1>` 和最终姿态参考 `<image2>`；无旧 LoRA 触发词。
 
 ## Installation / 安装
@@ -82,10 +83,40 @@ Actor 模式：左键拖动旋转人物 yaw；Shift + 左键拖动改变人物 X
 | `camera_info` | STRING | JSON：轨道角、相对角、实际相对视角、视线高度、景别 |
 | `pose_text` | STRING | 从骨架推导的基础姿态描述 |
 | `director_state` | STRING | version 1 完整 3D 状态，可重新导入 |
+| `controlled_model` | MODEL | 追加的第七个输出；ControlNet 开启时为施加姿态控制后的模型，关闭时透传输入模型 |
 
 尺寸支持 64–2048。`background_mode` 只影响生成指令，pose_control 固定黑底。
 可选 `image` 用于明确点击后的姿态导入。普通运行只使用你已经编辑并保存的姿态，绝不会自动重识别并覆盖它。
 Qwen 的身份参考仍需直接接 `image_1`；姿态来源图和身份参考图可以是不同图片。
+
+## Integrated ControlNet / 内置姿态控制（v0.3.0）
+
+打开 [`examples/qwen21_director_controlnet.json`](examples/qwen21_director_controlnet.json)。
+API 示例为 [`examples/qwen21_director_controlnet_api.json`](examples/qwen21_director_controlnet_api.json)。
+本机已安装示例工作流 **JR_Director_ControlNet**，默认 512、25 步、强度 1.0。
+
+1. 从 [Kijai 的测试权重目录](https://huggingface.co/Kijai/QwenImage_experimental/tree/main/model_patches)
+   下载 `qwen_image_2.1_fun_controlnet_union_int8_convrot.safetensors`，放到 ComfyUI 配置的 `models/model_patches`。
+   约 3.78GB；本机已经安装并校验。也支持同目录 BF16 版本，BF16 尚未在本机实测。
+2. 将 Qwen 2.1 的 `MODEL`、`VAE` 接入 Director，在 `controlnet_name` 中选择权重。
+3. Director 的 `controlled_model` 接 KSampler；原有 `director_prompt` 继续接 Qwen 文本编码器。
+4. 身份图接编码器 `image_1`，Director 的 `pose_control` 接 `image_2`。
+   保持 `pose_image_reference=true`，让双参考图与 ControlNet 同时发挥作用。
+5. 编辑姿态后运行。`control_strength` 为控制强度；`control_start/end` 是去噪过程的开始/结束比例。
+   `disabled` 或强度为零不会加载本节点的 ControlNet 权重，输入模型直接透传。
+
+只想使用 ControlNet 时，可断开编码器 `image_2` 并关闭 `pose_image_reference`；该开关调整提示词，**不会自动修改接线**。
+目前建议保留双参考图：本机测试中，只有身份图时原图姿势仍可能占主导。
+关闭 ControlNet 后若也断开 `image_2`，请另提供不引用姿态参考图的提示词。
+
+该集成保持旧节点 ID 和前六个输出索引。旧工作流默认关闭控制；模型文件不随 Git 仓库分发。
+权重必须是 **Qwen Image 2.1 Fun Union**，旧 Qwen InstantX / Fun ControlNet 不兼容，选错会明确报错。
+此版 UI 暴露 Pose 控制；虽然权重也支持 Depth、边缘和局部重绘，这些输入尚未集成到导演台。
+
+底层实现来源与修改范围见 [第三方声明](docs/THIRD_PARTY_NOTICES.md)，
+本机实测见 [ControlNet 验证记录](docs/CONTROLNET_VALIDATION.md)。
+包含 GPL 回移植的 v0.3.0 整体按 GPL-3.0-or-later 分发；原 Director 代码的 MIT 授权保留。
+模型权重另受 Qwen Research License 约束。
 
 ## Image → Editable Pose / 图片导入姿态
 
