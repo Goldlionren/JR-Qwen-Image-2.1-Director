@@ -56,6 +56,10 @@ app.registerExtension({
           if(taskMode&&!taskMode.value)taskMode.value='director';
           const identityScope=this.widgets.find((w:any)=>w.name==='identity_scope');
           if(identityScope&&!identityScope.value)identityScope.value='identity_only';
+          for(const [name,value] of [['anyangle_lora','disabled'],['anyangle_strength',1],['angle_guide','external']]) {
+            const widget=this.widgets.find((w:any)=>w.name===name);
+            if(widget&&widget.value==null)widget.value=value;
+          }
           const s=deserialize(stateWidget.value||'{}');for(const key of ['width','height'] as const){const w=this.widgets.find((w:any)=>w.name===key);if(w)s.render[key]=Number(w.value);}mounted.load(JSON.stringify(s));}
         catch {mounted.load(stateWidget.value);}
         finally {loading=false;}

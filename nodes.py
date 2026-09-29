@@ -38,19 +38,26 @@ class QwenImage21Director(io.ComfyNode):
                 io.Vae.Input('vae', optional=True),
                 io.Float.Input('reference_opacity', default=0, min=0, max=0.1, step=0.01, optional=True,
                     tooltip='Experimental: dim original image under bones (0 disables; try 0.05 or 0.10). Can conflict with edited poses/cameras. Uses the first image frame, fitted without cropping. control_image shows the actual ControlNet hint.'),
-                io.Combo.Input('task_mode', options=['director', 'edit_pose', 'replace_person'], default='director', optional=True,
-                    tooltip='director: original camera workflow. edit_pose: same person and scene, change pose. replace_person: identity_image supplies the person; image supplies the target scene and imported pose. Use the corresponding example to connect reference_image outputs.'),
+                io.Combo.Input('task_mode', options=['director', 'edit_pose', 'replace_person', 'any_angle'], default='director', optional=True,
+                    tooltip='director: original camera workflow. edit_pose: same person and scene, change pose. replace_person: identity_image supplies the person; image supplies scene/pose. any_angle: coarse target view is <image1>, original image is <image2>. Use the corresponding example for reference wiring.'),
                 io.Image.Input('identity_image', optional=True,
                     tooltip='Replacement person for replace_person only. image is the target scene/pose source; import pose from image, not identity_image.'),
                 io.Combo.Input('identity_scope', options=['identity_only','full_appearance'], default='identity_only', optional=True,
                     tooltip='identity_only: B face, hair and body; keep A scene clothing. full_appearance: also copy B clothing and accessories. Applies to replace_person.'),
+                io.Combo.Input('anyangle_lora', options=['disabled'] + folder_paths.get_filename_list('loras'), default='disabled', optional=True,
+                    tooltip='Only used in any_angle mode. Select QI2.1_AnyAngle.safetensors. Author recommends strength 1, sampler CFG 3 and 20+ steps.'),
+                io.Float.Input('anyangle_strength', default=1, min=0, max=2, step=.05, optional=True),
+                io.Combo.Input('angle_guide', options=['external', 'director_proxy'], default='external', optional=True,
+                    tooltip='external: connect a target-view 3D/splat render to angle_reference. director_proxy: experimental shaded rig, without source texture or scene geometry.'),
+                io.Image.Input('angle_reference', optional=True,
+                    tooltip='AnyAngle external coarse 3D render at the TARGET camera view. Used as <image1>; image is the original <image2>. It is not rotated by the Director. If adding ControlNet, align the rig with this guide.'),
             ],
             outputs=[io.String.Output("director_prompt"), io.Image.Output("pose_control"),
                      io.Image.Output("pose_preview"), io.String.Output("camera_info"),
                      io.String.Output("pose_text"), io.String.Output("director_state"),
                      io.Model.Output('controlled_model'), io.Image.Output('control_image'),
                      io.Image.Output('reference_image_1'), io.Image.Output('reference_image_2'),
-                     io.Image.Output('reference_image_3')],
+                     io.Image.Output('reference_image_3'), io.Image.Output('angle_preview')],
         )
 
     @classmethod
@@ -58,7 +65,8 @@ class QwenImage21Director(io.ComfyNode):
                 background_mode="preserve", framing="auto", prompt_prefix="", prompt_suffix="", image=None,
                 controlnet_name='disabled', control_strength=0.75, control_start=0, control_end=1,
                 model=None, vae=None, pose_image_reference=True, reference_opacity=0,
-                task_mode='director', identity_image=None, identity_scope='identity_only'):
+                task_mode='director', identity_image=None, identity_scope='identity_only',
+                anyangle_lora='disabled', anyangle_strength=1, angle_guide='external', angle_reference=None):
         controlnet_name = controlnet_name or 'disabled'
         if controlnet_name != 'disabled':
             from .controlnet.integration import validate_settings
@@ -72,7 +80,22 @@ class QwenImage21Director(io.ComfyNode):
         pixels = torch.from_numpy(render_pose(state)).unsqueeze(0)
         from .director.conditioning import reference_overlay, scenario_references
         task_mode = task_mode or 'director'
-        references = scenario_references(task_mode, pixels, image, identity_image)
+        angle_preview = None
+        if task_mode == 'any_angle':
+            if image is None:
+                raise ValueError('JR Director: AnyAngle requires image (the original image).')
+            if angle_guide == 'director_proxy':
+                from .director.coarse import render_coarse
+                angle_reference = torch.from_numpy(render_coarse(state)).unsqueeze(0)
+            elif angle_guide != 'external':
+                raise ValueError('JR Director: unknown angle_guide.')
+            elif angle_reference is None:
+                raise ValueError('JR Director: connect angle_reference, or choose the experimental director_proxy guide.')
+            from .director.anyangle import apply_anyangle
+            model = apply_anyangle(model, anyangle_lora, anyangle_strength)
+        references = scenario_references(task_mode, pixels, image, identity_image, angle_reference)
+        if task_mode == 'any_angle':
+            angle_preview = references[0]
         control_image = reference_overlay(pixels, image, reference_opacity)
         prompt, info, pose = build_prompt(state, subject_type, background_mode, framing,
                                          controlnet=controlnet_name != 'disabled' and not pose_image_reference,
@@ -83,4 +106,9 @@ class QwenImage21Director(io.ComfyNode):
             from .controlnet.integration import apply_control
             model = apply_control(model, load_controlnet(controlnet_name), vae, control_image,
                                   control_strength, control_start, control_end)
-        return io.NodeOutput(prompt, pixels, pixels.clone(), info, pose, json.dumps(state, separators=(",", ":")), model, control_image, *references)
+        info = json.loads(info)
+        if task_mode == 'any_angle':
+            info.update(angle_guide=angle_guide, anyangle_lora=anyangle_lora,
+                        anyangle_strength=anyangle_strength, image_order=['coarse_target_view', 'original'])
+        return io.NodeOutput(prompt, pixels, pixels.clone(), json.dumps(info, indent=2), pose,
+                             json.dumps(state, separators=(",", ":")), model, control_image, *references, angle_preview)

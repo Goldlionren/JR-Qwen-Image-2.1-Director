@@ -1,0 +1,152 @@
+{
+  "1": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "qwen_image_2.1_int8_convrot.safetensors",
+      "weight_dtype": "default"
+    }
+  },
+  "2": {
+    "class_type": "QwenImage21Cache",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "device": "auto",
+      "dtype": "default"
+    }
+  },
+  "3": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen3vl_8b_int8_convrot.safetensors",
+      "type": "qwen_image",
+      "device": "default"
+    }
+  },
+  "4": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
+    }
+  },
+  "5": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "qwen21_director_reference_20260928.png"
+    }
+  },
+  "6": {
+    "class_type": "QwenImage21Director",
+    "inputs": {
+      "director_state": "{\"version\": 1, \"camera\": {\"azimuth\": 60, \"elevation\": 15, \"distance\": 3.1, \"fov\": 40, \"roll\": 0, \"target\": [0, 0.95, 0]}, \"actor\": {\"position\": [0, 0, 0], \"yaw\": 0, \"pitch\": 0, \"roll\": 0, \"scale\": 1}, \"pose\": {\"skeleton_type\": \"director_body_v1\", \"preset\": \"Neutral Standing\", \"joints\": {\"pelvis\": [0, 0, 0], \"spine\": [0, 0, 0], \"chest\": [0, 0, 0], \"neck\": [0, 0, 0], \"head\": [0, 0, 0], \"nose\": [0, 0, 0], \"right_eye\": [0, 0, 0], \"left_eye\": [0, 0, 0], \"right_ear\": [0, 0, 0], \"left_ear\": [0, 0, 0], \"right_shoulder\": [0, 0, 0], \"right_elbow\": [0, 0, 0], \"right_wrist\": [0, 0, 0], \"left_shoulder\": [0, 0, 0], \"left_elbow\": [0, 0, 0], \"left_wrist\": [0, 0, 0], \"right_hip\": [0, 0, 0], \"right_knee\": [0, 0, 0], \"right_ankle\": [0, 0, 0], \"left_hip\": [0, 0, 0], \"left_knee\": [0, 0, 0], \"left_ankle\": [0, 0, 0]}}, \"render\": {\"width\": 512, \"height\": 512, \"background\": \"black\"}, \"ui\": {\"mode\": \"CAMERA\", \"selected_joint\": \"right_shoulder\", \"view\": \"camera\"}}",
+      "width": 512,
+      "height": 512,
+      "subject_type": "character",
+      "background_mode": "preserve",
+      "framing": "auto",
+      "prompt_prefix": "",
+      "prompt_suffix": "",
+      "image": [
+        "5",
+        0
+      ],
+      "model": [
+        "2",
+        0
+      ],
+      "vae": [
+        "4",
+        0
+      ],
+      "controlnet_name": "disabled",
+      "control_strength": 0.25,
+      "control_start": 0.0,
+      "control_end": 0.6,
+      "pose_image_reference": false,
+      "reference_opacity": 0,
+      "task_mode": "any_angle",
+      "anyangle_lora": "QI2.1_AnyAngle.safetensors",
+      "anyangle_strength": 1,
+      "angle_guide": "director_proxy"
+    }
+  },
+  "7": {
+    "class_type": "TextEncodeQwenImage21",
+    "inputs": {
+      "clip": [
+        "3",
+        0
+      ],
+      "vae": [
+        "4",
+        0
+      ],
+      "prompt": [
+        "6",
+        0
+      ],
+      "negative_prompt": "",
+      "resolution": 0,
+      "images.image_1": [
+        "6",
+        8
+      ],
+      "images.image_2": [
+        "6",
+        9
+      ]
+    }
+  },
+  "8": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": [
+        "6",
+        6
+      ],
+      "positive": [
+        "7",
+        0
+      ],
+      "negative": [
+        "7",
+        1
+      ],
+      "latent_image": [
+        "7",
+        2
+      ],
+      "seed": 21003,
+      "steps": 25,
+      "cfg": 3,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0
+    }
+  },
+  "9": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "8",
+        0
+      ],
+      "vae": [
+        "4",
+        0
+      ]
+    }
+  },
+  "10": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "9",
+        0
+      ],
+      "filename_prefix": "JR_Director_AnyAngle/director"
+    }
+  }
+}

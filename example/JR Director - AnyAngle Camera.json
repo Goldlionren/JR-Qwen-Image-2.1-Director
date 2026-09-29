@@ -1,0 +1,757 @@
+{
+  "id": "3222cfb8-85a7-59ff-91f3-bd646520df35",
+  "revision": 0,
+  "last_node_id": 23,
+  "last_link_id": 31,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "UNETLoader",
+      "pos": [
+        -1400,
+        -400
+      ],
+      "size": [
+        330,
+        82
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "UNETLoader"
+      },
+      "widgets_values": [
+        "qwen_image_2.1_int8_convrot.safetensors",
+        "default"
+      ]
+    },
+    {
+      "id": 2,
+      "type": "QwenImage21Cache",
+      "pos": [
+        -1000,
+        -400
+      ],
+      "size": [
+        300,
+        82
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            25
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "QwenImage21Cache"
+      },
+      "widgets_values": [
+        "auto",
+        "default"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "CLIPLoader",
+      "pos": [
+        -1400,
+        -180
+      ],
+      "size": [
+        330,
+        106
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            27
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPLoader"
+      },
+      "widgets_values": [
+        "qwen3vl_8b_int8_convrot.safetensors",
+        "qwen_image",
+        "default"
+      ]
+    },
+    {
+      "id": 4,
+      "type": "VAELoader",
+      "pos": [
+        -1000,
+        -180
+      ],
+      "size": [
+        330,
+        58
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            15,
+            26,
+            30
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "qwen_image_2.1_vae_bf16.safetensors"
+      ]
+    },
+    {
+      "id": 6,
+      "type": "TextEncodeQwenImage21",
+      "pos": [
+        400,
+        -400
+      ],
+      "size": [
+        420,
+        400
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 27
+        },
+        {
+          "name": "images.image_1",
+          "type": "IMAGE",
+          "link": 28
+        },
+        {
+          "name": "images.image_2",
+          "type": "IMAGE",
+          "link": 29
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 30
+        },
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "link": 31,
+          "widget": {
+            "name": "prompt"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "links": [
+            16
+          ]
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "links": [
+            17
+          ]
+        },
+        {
+          "name": "latent",
+          "type": "LATENT",
+          "links": [
+            18
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "TextEncodeQwenImage21"
+      },
+      "widgets_values": [
+        "",
+        "",
+        0
+      ],
+      "title": "JR · <image1> 目标粗图 / <image2> 原图"
+    },
+    {
+      "id": 11,
+      "type": "LoadImage",
+      "pos": [
+        -1380,
+        150
+      ],
+      "size": [
+        330,
+        314
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            24
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "title": "JR · <image2> 原人物 / 原始画面",
+      "widgets_values": [
+        "qwen21_director_reference_20260928.png",
+        "image"
+      ]
+    },
+    {
+      "id": 7,
+      "type": "KSampler",
+      "pos": [
+        850,
+        -400
+      ],
+      "size": [
+        320,
+        262
+      ],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 12
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 16
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 17
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 18
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            19
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        21003,
+        "fixed",
+        25,
+        3,
+        "euler",
+        "simple",
+        1
+      ],
+      "title": "JR · 4. 使用受控模型采样"
+    },
+    {
+      "id": 8,
+      "type": "VAEDecode",
+      "pos": [
+        1250,
+        -400
+      ],
+      "size": [
+        210,
+        46
+      ],
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 19
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 15
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            20
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      }
+    },
+    {
+      "id": 9,
+      "type": "SaveImage",
+      "pos": [
+        1250,
+        -80
+      ],
+      "size": [
+        400,
+        400
+      ],
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 20
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "JR_Director_AnyAngle/director"
+      ]
+    },
+    {
+      "id": 21,
+      "type": "QwenImage21Director",
+      "pos": [
+        -500,
+        -420
+      ],
+      "size": [
+        800,
+        1420
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 24
+        },
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 25
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 26
+        },
+        {
+          "name": "identity_image",
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "angle_reference",
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "director_prompt",
+          "type": "STRING",
+          "links": [
+            31
+          ]
+        },
+        {
+          "name": "pose_control",
+          "type": "IMAGE",
+          "links": []
+        },
+        {
+          "name": "pose_preview",
+          "type": "IMAGE",
+          "links": []
+        },
+        {
+          "name": "camera_info",
+          "type": "STRING",
+          "links": []
+        },
+        {
+          "name": "pose_text",
+          "type": "STRING",
+          "links": []
+        },
+        {
+          "name": "director_state",
+          "type": "STRING",
+          "links": []
+        },
+        {
+          "name": "controlled_model",
+          "type": "MODEL",
+          "links": [
+            12
+          ]
+        },
+        {
+          "name": "control_image",
+          "type": "IMAGE",
+          "links": []
+        },
+        {
+          "name": "reference_image_1",
+          "type": "IMAGE",
+          "links": [
+            28
+          ]
+        },
+        {
+          "name": "reference_image_2",
+          "type": "IMAGE",
+          "links": [
+            29
+          ]
+        },
+        {
+          "name": "reference_image_3",
+          "type": "IMAGE",
+          "links": []
+        },
+        {
+          "name": "angle_preview",
+          "type": "IMAGE",
+          "links": [
+            23
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "QwenImage21Director"
+      },
+      "widgets_values": [
+        "{\"version\": 1, \"camera\": {\"azimuth\": 60, \"elevation\": 15, \"distance\": 3.1, \"fov\": 40, \"roll\": 0, \"target\": [0, 0.95, 0]}, \"actor\": {\"position\": [0, 0, 0], \"yaw\": 0, \"pitch\": 0, \"roll\": 0, \"scale\": 1}, \"pose\": {\"skeleton_type\": \"director_body_v1\", \"preset\": \"Neutral Standing\", \"joints\": {\"pelvis\": [0, 0, 0], \"spine\": [0, 0, 0], \"chest\": [0, 0, 0], \"neck\": [0, 0, 0], \"head\": [0, 0, 0], \"nose\": [0, 0, 0], \"right_eye\": [0, 0, 0], \"left_eye\": [0, 0, 0], \"right_ear\": [0, 0, 0], \"left_ear\": [0, 0, 0], \"right_shoulder\": [0, 0, 0], \"right_elbow\": [0, 0, 0], \"right_wrist\": [0, 0, 0], \"left_shoulder\": [0, 0, 0], \"left_elbow\": [0, 0, 0], \"left_wrist\": [0, 0, 0], \"right_hip\": [0, 0, 0], \"right_knee\": [0, 0, 0], \"right_ankle\": [0, 0, 0], \"left_hip\": [0, 0, 0], \"left_knee\": [0, 0, 0], \"left_ankle\": [0, 0, 0]}}, \"render\": {\"width\": 512, \"height\": 512, \"background\": \"black\"}, \"ui\": {\"mode\": \"CAMERA\", \"selected_joint\": \"right_shoulder\", \"view\": \"camera\"}}",
+        512,
+        512,
+        "character",
+        "preserve",
+        "auto",
+        "",
+        "",
+        "disabled",
+        0.25,
+        0.0,
+        0.6,
+        false,
+        0.0,
+        "any_angle",
+        "identity_only",
+        "QI2.1_AnyAngle.safetensors",
+        1.0,
+        "director_proxy"
+      ]
+    },
+    {
+      "id": 22,
+      "type": "PreviewImage",
+      "pos": [
+        400,
+        300
+      ],
+      "size": [
+        380,
+        400
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 23
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "title": "JR · AnyAngle 实际角度引导"
+    },
+    {
+      "id": 23,
+      "type": "Note",
+      "pos": [
+        -1400,
+        600
+      ],
+      "size": [
+        780,
+        640
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "JR · 使用说明",
+      "properties": {},
+      "widgets_values": [
+        "JR Qwen Image 2.1 Director · AnyAngle 换机位\n\ntask_mode=any_angle；LoRA=QI2.1_AnyAngle.safetensors；强度 1。\n采样器 CFG=3，25 步。ControlNet 默认关闭；可选启用强度 0.25、区间 0–0.6 做对比。\n编码器顺序与其他模式不同：<image1> 是目标机位粗图，<image2> 是原图。已正确接线。\n通用提示词：Change the camera angle from <image2> to <image1>.\n\nangle_guide=director_proxy：实验性灰色实体人偶，跟随导演台相机和关节。\n示例方位 60°、俯视 15°。可直接调整相机后 Run；原图接 image。\n灰色人偶没有原图的头发、服装、体型和场景结构，不等于完整 3D 粗模，角度/背景效果需筛选。\n\nAnyAngle 用于同人物换机位，不是身份替换模型，也不自动重建 3D 场景。\nexamples/reference.png → input/qwen21_director_reference_20260928.png。\nexamples/scenarios/jr_anyangle_coarse60.png → input/ 同名文件（外部入口演示）。\n将作者 QI2.1_AnyAngle.safetensors 放入 models/loras，本机已安装。\n作者：https://huggingface.co/lilylilith/QI_2.1_AnyAngle"
+      ],
+      "color": "#234",
+      "bgcolor": "#345"
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      0,
+      "MODEL"
+    ],
+    [
+      12,
+      21,
+      6,
+      7,
+      0,
+      "MODEL"
+    ],
+    [
+      15,
+      4,
+      0,
+      8,
+      1,
+      "VAE"
+    ],
+    [
+      16,
+      6,
+      0,
+      7,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      17,
+      6,
+      1,
+      7,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      18,
+      6,
+      2,
+      7,
+      3,
+      "LATENT"
+    ],
+    [
+      19,
+      7,
+      0,
+      8,
+      0,
+      "LATENT"
+    ],
+    [
+      20,
+      8,
+      0,
+      9,
+      0,
+      "IMAGE"
+    ],
+    [
+      23,
+      21,
+      11,
+      22,
+      0,
+      "IMAGE"
+    ],
+    [
+      24,
+      11,
+      0,
+      21,
+      0,
+      "IMAGE"
+    ],
+    [
+      25,
+      2,
+      0,
+      21,
+      1,
+      "MODEL"
+    ],
+    [
+      26,
+      4,
+      0,
+      21,
+      2,
+      "VAE"
+    ],
+    [
+      27,
+      3,
+      0,
+      6,
+      0,
+      "CLIP"
+    ],
+    [
+      28,
+      21,
+      8,
+      6,
+      1,
+      "IMAGE"
+    ],
+    [
+      29,
+      21,
+      9,
+      6,
+      2,
+      "IMAGE"
+    ],
+    [
+      30,
+      4,
+      0,
+      6,
+      3,
+      "VAE"
+    ],
+    [
+      31,
+      21,
+      0,
+      6,
+      4,
+      "STRING"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "01 · 模型 / 参考图 / 使用说明",
+      "bounding": [
+        -1460,
+        -480,
+        920,
+        1800
+      ],
+      "color": "#35556a",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 2,
+      "title": "02 · 导演台 + 内置 INT8 ControlNet",
+      "bounding": [
+        -525,
+        -480,
+        850,
+        1530
+      ],
+      "color": "#376a62",
+      "font_size": 24,
+      "flags": {}
+    },
+    {
+      "id": 3,
+      "title": "03 · 双参考编码 / 采样 / 输出",
+      "bounding": [
+        370,
+        -480,
+        1260,
+        1350
+      ],
+      "color": "#635279",
+      "font_size": 24,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {},
+  "version": 0.4
+}

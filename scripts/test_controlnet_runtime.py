@@ -31,6 +31,17 @@ from director.conditioning import reference_overlay, scenario_references
 
 
 class ControlTests(unittest.TestCase):
+    def test_anyangle_reference_order_and_missing_guide(self):
+        pose=torch.zeros(1,32,64,3)
+        source=torch.ones(1,64,64,3)
+        coarse=torch.ones_like(pose)*.4
+        first,second,third=scenario_references('any_angle',pose,source,angle_reference=coarse)
+        torch.testing.assert_close(first,coarse)
+        self.assertEqual(second.shape,pose.shape)
+        self.assertEqual(second[0,:,0].sum().item(),0)
+        self.assertIsNone(third)
+        with self.assertRaises(ValueError):scenario_references('any_angle',pose,source)
+
     def test_scenario_references_use_scene_for_pose_and_identity_for_person(self):
         pose=torch.zeros(1,32,64,3)
         scene=torch.zeros(1,32,64,3);scene[...,1]=1

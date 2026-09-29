@@ -32,6 +32,15 @@ selection, explicit no-person handling, and local editable-rig integration.
 Model weights are not bundled. Their upstream distribution and applicable licenses
 remain with their respective authors.
 
+## AnyAngle model integration
+
+[QI_2.1_AnyAngle by lilylilith](https://huggingface.co/lilylilith/QI_2.1_AnyAngle)
+is loaded through ComfyUI's native LoRA loader, with no model weights bundled in this repository.
+The model card declares Apache-2.0. The tested revision is
+`e42ac7827e2cad7ce22dc099109ae29681239eba`.
+The short camera-edit instruction and reference image order follow the author's model card.
+The experimental shaded rig renderer is JR code, not the author's image-to-3D workflow.
+
 ## Vue
 
 The MIT License (MIT)

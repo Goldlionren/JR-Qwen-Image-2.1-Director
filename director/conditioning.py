@@ -23,14 +23,18 @@ def fit_reference(reference, canvas):
     return result
 
 
-def scenario_references(mode, pose, source, identity=None):
-    if mode not in ('director', 'edit_pose', 'replace_person'):
+def scenario_references(mode, pose, source, identity=None, angle_reference=None):
+    if mode not in ('director', 'edit_pose', 'replace_person', 'any_angle'):
         raise ValueError('JR Director: unknown task_mode.')
     if mode == 'director':
         return None, None, None
     if source is None:
         raise ValueError('JR Director: connect image (source scene / pose) for this task_mode.')
     source = fit_reference(source, pose)
+    if mode == 'any_angle':
+        if angle_reference is None:
+            raise ValueError('JR Director: AnyAngle requires a coarse angle reference.')
+        return fit_reference(angle_reference, pose), source, None
     if mode == 'edit_pose':
         return source, pose, None
     if identity is None:

@@ -13,6 +13,7 @@
 - **从图片导入姿态**：接入 IMAGE，DWPose 检测人物，选择人物后拟合为固定骨长的可编辑骨架；支持撤销和保存。
 - **内置 Fun Union ControlNet**：项目内回移植 Qwen Image 2.1 控制分支，支持 INT8 convrot / BF16；无需安装上游 PR 或修改 ComfyUI Core。
 - **两种场景模式**：同人物同场景改动作（`edit_pose`），或把身份图人物放入目标场景/姿态（`replace_person`）。
+- **AnyAngle 换机位（实验性）**：节点内加载作者 LoRA，接外部 3D 粗渲染图，或用导演台生成灰色实体人偶作为实验引导。支持与内置 ControlNet 叠加；当前人偶测试尚未实现准确换机位，见 [接入与实测](docs/ANYANGLE.md)。
 - 提示词按任务模式区分身份参考、完整场景参考与目标姿态；无旧 LoRA 触发词。
 
 ## Installation / 安装

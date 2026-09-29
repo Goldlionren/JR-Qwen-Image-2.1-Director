@@ -123,6 +123,9 @@ def build_prompt(state, subject_type="character", background_mode="preserve", fr
                   'The replacement must be recognizable as the person from <image1>, without blending in the original person\'s facial features. '
                   'Replace that person rather than adding another. Adapt clothing folds, shadows and occlusions naturally. '
                   'Keep unrelated people and objects unchanged. Do not render the pose guide\'s lines, colors or background.')
+    elif task_mode == 'any_angle':
+        # Author's exact two-image instruction; order differs from other modes.
+        prompt = 'Change the camera angle from <image2> to <image1>.'
     elif task_mode != 'director':
         raise ValueError('JR Director: unknown task_mode.')
     info = json.dumps({"azimuth": c["azimuth"], "elevation": c["elevation"], "distance": c["distance"], "fov": c["fov"],
