@@ -50,6 +50,8 @@ app.registerExtension({
           // It now lands on the new combo; restore the safe default without changing old poses.
           const control=this.widgets.find((w:any)=>w.name==='controlnet_name');
           if(control&&(typeof control.value!=='string'||!control.value))control.value='disabled';
+          const opacity=this.widgets.find((w:any)=>w.name==='reference_opacity');
+          if(opacity&&opacity.value==null)opacity.value=0;
           const s=deserialize(stateWidget.value||'{}');for(const key of ['width','height'] as const){const w=this.widgets.find((w:any)=>w.name===key);if(w)s.render[key]=Number(w.value);}mounted.load(JSON.stringify(s));}
         catch {mounted.load(stateWidget.value);}
         finally {loading=false;}

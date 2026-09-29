@@ -17,9 +17,10 @@ byid={n['id']:n for n in workflow['nodes']}
 director=byid[21]
 director['inputs'] += [{'name':'model','type':'MODEL','link':25},{'name':'vae','type':'VAE','link':26}]
 director['outputs'].append({'name':'controlled_model','type':'MODEL','links':[12]})
+director['outputs'].append({'name':'control_image','type':'IMAGE','links':[]})
 director['widgets_values'][0]=json.dumps(state)
 director['widgets_values'][1:3]=[512,512]
-director['widgets_values'] += [name,1.,0.,1.,True]
+director['widgets_values'] += [name,1.,0.,1.,True,0.]
 director['size']=[800,1220]
 encoder=byid[6]
 encoder['widgets_values'][2]=512
@@ -66,7 +67,7 @@ for node in workflow['nodes']:
 api=json.loads((root/'examples/qwen21_director_api.json').read_text())
 api['6']['inputs'].update(model=['2',0],vae=['4',0],width=512,height=512,
     director_state=json.dumps(state),
-    controlnet_name=name,control_strength=1.,control_start=0.,control_end=1.,pose_image_reference=True)
+    controlnet_name=name,control_strength=1.,control_start=0.,control_end=1.,pose_image_reference=True,reference_opacity=0.)
 api['7']['inputs']['resolution']=512
 api['8']['inputs']['model']=['6',6]
 api['10']['inputs']['filename_prefix']='JR_Qwen_Director_ControlNet'

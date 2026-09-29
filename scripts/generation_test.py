@@ -17,6 +17,7 @@ p.add_argument('--control-start',type=float,default=0.)
 p.add_argument('--control-end',type=float,default=1.)
 p.add_argument('--tag',default='')
 p.add_argument('--dual-reference',action='store_true')
+p.add_argument('--reference-opacity',type=float,default=0.)
 args=p.parse_args()
 def request(path,payload=None):
     req=urllib.request.Request(args.url+path,None if payload is None else json.dumps(payload).encode(),{'Content-Type':'application/json'})
@@ -51,9 +52,11 @@ if args.control:
     graph['6']['inputs'].update(model=['2',0],vae=['4',0],
         controlnet_name='model_patches/qwen_image_2.1_fun_controlnet_union_int8_convrot.safetensors',
         control_strength=args.strength,control_start=args.control_start,control_end=args.control_end,
-        pose_image_reference=args.dual_reference)
+        pose_image_reference=args.dual_reference,reference_opacity=args.reference_opacity)
     if not args.dual_reference: graph['7']['inputs'].pop('images.image_2')
     graph['8']['inputs']['model']=['6',6]
+    graph['11']={'class_type':'SaveImage','inputs':{'images':['6',7],
+        'filename_prefix':'Qwen21Director_test/'+run_name+'-hint'}}
 response=request('/prompt',{'prompt':graph,'client_id':'qwen-director-generation-test'})
 pid=response['prompt_id'];print('Queued',pid,'case',args.case,flush=True)
 Path('.local').mkdir(exist_ok=True)
@@ -73,7 +76,8 @@ while time.monotonic()-start<1200:
             Path('.local/generation-'+run_name+'-metrics.json').write_text(json.dumps({
                 'elapsed_seconds':round(time.monotonic()-start,2),'sampled_gpu_memory_mib':peak_vram_mib,
                 'note':'Total GPU usage sampled every ~2s; includes other GPU processes and may miss peaks.',
-                'resolution':args.resolution,'steps':args.steps,'control_strength':args.strength if args.control else None},indent=2))
+                'resolution':args.resolution,'steps':args.steps,'control_strength':args.strength if args.control else None,
+                'reference_opacity':args.reference_opacity},indent=2))
             print('Completed',round(time.monotonic()-start,1),'seconds',record['outputs'],flush=True);break
     elapsed=int((time.monotonic()-start)/30)
     if elapsed!=last:print('Waiting',elapsed*30,'seconds',flush=True);last=elapsed

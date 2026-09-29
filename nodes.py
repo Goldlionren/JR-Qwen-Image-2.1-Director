@@ -36,18 +36,20 @@ class QwenImage21Director(io.ComfyNode):
                     tooltip='Keep pose_control connected to Qwen image_2 for dual-reference + ControlNet. Turn off only when image_2 is not connected.'),
                 io.Model.Input('model', optional=True),
                 io.Vae.Input('vae', optional=True),
+                io.Float.Input('reference_opacity', default=0, min=0, max=0.1, step=0.01, optional=True,
+                    tooltip='Experimental: dim original image under bones (0 disables; try 0.05 or 0.10). Can conflict with edited poses/cameras. Uses the first image frame, fitted without cropping. control_image shows the actual ControlNet hint.'),
             ],
             outputs=[io.String.Output("director_prompt"), io.Image.Output("pose_control"),
                      io.Image.Output("pose_preview"), io.String.Output("camera_info"),
                      io.String.Output("pose_text"), io.String.Output("director_state"),
-                     io.Model.Output('controlled_model')],
+                     io.Model.Output('controlled_model'), io.Image.Output('control_image')],
         )
 
     @classmethod
     def execute(cls, director_state="{}", width=1024, height=1024, subject_type="character",
                 background_mode="preserve", framing="auto", prompt_prefix="", prompt_suffix="", image=None,
                 controlnet_name='disabled', control_strength=0.75, control_start=0, control_end=1,
-                model=None, vae=None, pose_image_reference=True):
+                model=None, vae=None, pose_image_reference=True, reference_opacity=0):
         controlnet_name = controlnet_name or 'disabled'
         if controlnet_name != 'disabled':
             from .controlnet.integration import validate_settings
@@ -59,12 +61,14 @@ class QwenImage21Director(io.ComfyNode):
         state["render"].update(width=width, height=height)
         state = parse_state(state)
         pixels = torch.from_numpy(render_pose(state)).unsqueeze(0)
+        from .director.conditioning import reference_overlay
+        control_image = reference_overlay(pixels, image, reference_opacity)
         prompt, info, pose = build_prompt(state, subject_type, background_mode, framing,
                                          controlnet=controlnet_name != 'disabled' and not pose_image_reference)
         prompt = "\n\n".join(p for p in [prompt_prefix.strip(), prompt, prompt_suffix.strip()] if p)
         if use_control:
             from .controlnet.loader import load_controlnet
             from .controlnet.integration import apply_control
-            model = apply_control(model, load_controlnet(controlnet_name), vae, pixels,
+            model = apply_control(model, load_controlnet(controlnet_name), vae, control_image,
                                   control_strength, control_start, control_end)
-        return io.NodeOutput(prompt, pixels, pixels.clone(), info, pose, json.dumps(state, separators=(",", ":")), model)
+        return io.NodeOutput(prompt, pixels, pixels.clone(), info, pose, json.dumps(state, separators=(",", ":")), model, control_image)

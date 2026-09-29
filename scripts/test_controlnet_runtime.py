@@ -27,9 +27,24 @@ from controlnet.patch import QwenImage21FunControlPatch, QwenImage21FunControlBl
 from controlnet.compat import _forward
 from director.prompt import build_prompt
 from director.state import default_state
+from director.conditioning import reference_overlay
 
 
 class ControlTests(unittest.TestCase):
+    def test_reference_hint_keeps_bones_and_aspect_and_zero_bypass(self):
+        pose=torch.zeros(1,8,8,3);pose[0,4,4,0]=1
+        ref=torch.ones(2,4,8,3)
+        self.assertIs(reference_overlay(pose,None,0),pose)
+        result=reference_overlay(pose,ref,.1)
+        torch.testing.assert_close(result[0,4,4],pose[0,4,4])
+        torch.testing.assert_close(result[0,3,3],torch.full((3,),.1))
+        self.assertEqual(result[:,0].sum().item(),0)
+        self.assertEqual(ref.sum().item(),192)
+        self.assertEqual(pose.sum().item(),1)
+        for opacity in [float('nan'),-.1,.11]:
+            with self.assertRaises(ValueError):reference_overlay(pose,ref,opacity)
+        with self.assertRaises(ValueError):reference_overlay(pose,None,.05)
+
     def test_wrong_checkpoint_and_partial_checkpoint_rejected(self):
         shape = lambda *s: SimpleNamespace(shape=s)
         sd = {'control_img_in.weight': shape(4096,129),

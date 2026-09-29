@@ -64,7 +64,8 @@
       "control_strength": 1.0,
       "control_start": 0.0,
       "control_end": 1.0,
-      "pose_image_reference": true
+      "pose_image_reference": true,
+      "reference_opacity": 0.0
     }
   },
   "7": {

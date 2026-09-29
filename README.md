@@ -84,9 +84,10 @@ Actor 模式：左键拖动旋转人物 yaw；Shift + 左键拖动改变人物 X
 | `pose_text` | STRING | 从骨架推导的基础姿态描述 |
 | `director_state` | STRING | version 1 完整 3D 状态，可重新导入 |
 | `controlled_model` | MODEL | 追加的第七个输出；ControlNet 开启时为施加姿态控制后的模型，关闭时透传输入模型 |
+| `control_image` | IMAGE | 第八个输出；实际送入内部 ControlNet 的控制图，含可选的淡原图叠加 |
 
 尺寸支持 64–2048。`background_mode` 只影响生成指令，pose_control 固定黑底。
-可选 `image` 用于明确点击后的姿态导入。普通运行只使用你已经编辑并保存的姿态，绝不会自动重识别并覆盖它。
+可选 `image` 用于明确点击后的姿态导入，也可作为实验性原图叠加来源。普通运行只使用你已经编辑并保存的姿态，绝不会自动重识别并覆盖它。
 Qwen 的身份参考仍需直接接 `image_1`；姿态来源图和身份参考图可以是不同图片。
 
 ## Integrated ControlNet / 内置姿态控制（v0.3.0）
@@ -113,6 +114,16 @@ API 示例为 [`examples/qwen21_director_controlnet_api.json`](examples/qwen21_d
 该集成保持旧节点 ID 和前六个输出索引。旧工作流默认关闭控制；模型文件不随 Git 仓库分发。
 权重必须是 **Qwen Image 2.1 Fun Union**，旧 Qwen InstantX / Fun ControlNet 不兼容，选错会明确报错。
 此版 UI 暴露 Pose 控制；虽然权重也支持 Depth、边缘和局部重绘，这些输入尚未集成到导演台。
+
+### 实验：骨架下叠加淡原图
+
+`reference_opacity` 默认 **0（关闭）**，可试 `0.05` 或 `0.10`，表示原图保留 5% 或 10% 的强度。
+将来源图接到 Director 的 `image`，把 `control_image` 接到 Preview Image 查看实际控制图。
+原图取第一帧、等比例居中适配并留黑边；骨架颜色保持清晰。不会自动把原图人物变形到修改后的姿态。
+内部 ControlNet 使用此合成图；原来的 `pose_control` / `pose_preview` 仍是纯骨架，原有输出索引不变。
+现有示例的编码器 `image_2` 仍接纯骨架；如需单独实验图像参考叠加，可改接 `control_image`。
+大幅换姿态、换视角时，原图可能与目标骨架冲突；**不能将 5%–10% 当作已经验证的通用增强配方**。
+GitHub 调研、同种子对比与深度方案见 [姿态增强实验](docs/POSE_CONTROL_RESEARCH.md)。
 
 底层实现来源与修改范围见 [第三方声明](docs/THIRD_PARTY_NOTICES.md)，
 本机实测见 [ControlNet 验证记录](docs/CONTROLNET_VALIDATION.md)。

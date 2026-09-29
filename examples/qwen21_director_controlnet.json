@@ -457,6 +457,11 @@
           "links": [
             12
           ]
+        },
+        {
+          "name": "control_image",
+          "type": "IMAGE",
+          "links": []
         }
       ],
       "properties": {
@@ -475,7 +480,8 @@
         1.0,
         0.0,
         1.0,
-        true
+        true,
+        0.0
       ]
     },
     {
