@@ -27,10 +27,26 @@ from controlnet.patch import QwenImage21FunControlPatch, QwenImage21FunControlBl
 from controlnet.compat import _forward
 from director.prompt import build_prompt
 from director.state import default_state
-from director.conditioning import reference_overlay
+from director.conditioning import reference_overlay, scenario_references
 
 
 class ControlTests(unittest.TestCase):
+    def test_scenario_references_use_scene_for_pose_and_identity_for_person(self):
+        pose=torch.zeros(1,32,64,3)
+        scene=torch.zeros(1,32,64,3);scene[...,1]=1
+        identity=torch.zeros(1,64,32,3);identity[...,0]=1
+        a,b,c=scenario_references('replace_person',pose,scene,identity)
+        self.assertEqual(a.shape,pose.shape)
+        self.assertEqual(a[...,1].sum().item(),0)
+        self.assertEqual(a[0,:,0].sum().item(),0)
+        torch.testing.assert_close(b,scene)
+        self.assertIs(c,pose)
+        a,b,c=scenario_references('edit_pose',pose,scene)
+        torch.testing.assert_close(a,scene)
+        self.assertIs(b,pose);self.assertIsNone(c)
+        for mode,source,person in [('edit_pose',None,None),('replace_person',scene,None),('unknown',scene,identity)]:
+            with self.assertRaises(ValueError):scenario_references(mode,pose,source,person)
+
     def test_reference_hint_keeps_bones_and_aspect_and_zero_bypass(self):
         pose=torch.zeros(1,8,8,3);pose[0,4,4,0]=1
         ref=torch.ones(2,4,8,3)

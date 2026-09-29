@@ -2,6 +2,10 @@
 
 日期：2026-09-29。目标是提高修改后的姿态与摄影机控制，而非仅复制参考图。
 
+后续需求明确分成两类：**同人同场景改动作**，和 **保留 image2 场景/动作、换成 image1 的人物**。
+本文最初的叠加实验将原图旧姿态与新姿态混用，不能据此否定第二类用途。
+第二类应叠加 image2，完整场景图也应独立送入编码器；新的实现和分场景实验见 [SCENARIOS.md](SCENARIOS.md)。
+
 ## GitHub 上实际能确认什么
 
 - [ComfyUI-OpenPose](https://github.com/alessandrozonta/ComfyUI-OpenPose/blob/main/openpose_node.py) 同时输出带关键点的原图和黑底关键点图，并提供透明度参数。它证明叠加实现存在，**不证明 5%–10% 原图对 Qwen 2.1 必然更有效**。

@@ -12,7 +12,8 @@
 - 完整状态保存在 workflow 的 `director_state` 字符串输入中。Python 独立重算投影，API 执行无需浏览器。
 - **从图片导入姿态**：接入 IMAGE，DWPose 检测人物，选择人物后拟合为固定骨长的可编辑骨架；支持撤销和保存。
 - **内置 Fun Union ControlNet**：项目内回移植 Qwen Image 2.1 控制分支，支持 INT8 convrot / BF16；无需安装上游 PR 或修改 ComfyUI Core。
-- 自然语言提示词区分身份参考 `<image1>` 和最终姿态参考 `<image2>`；无旧 LoRA 触发词。
+- **两种场景模式**：同人物同场景改动作（`edit_pose`），或把身份图人物放入目标场景/姿态（`replace_person`）。
+- 提示词按任务模式区分身份参考、完整场景参考与目标姿态；无旧 LoRA 触发词。
 
 ## Installation / 安装
 
@@ -85,10 +86,44 @@ Actor 模式：左键拖动旋转人物 yaw；Shift + 左键拖动改变人物 X
 | `director_state` | STRING | version 1 完整 3D 状态，可重新导入 |
 | `controlled_model` | MODEL | 追加的第七个输出；ControlNet 开启时为施加姿态控制后的模型，关闭时透传输入模型 |
 | `control_image` | IMAGE | 第八个输出；实际送入内部 ControlNet 的控制图，含可选的淡原图叠加 |
+| `reference_image_1` | IMAGE | edit_pose 的原图，或 replace_person 的替换人物身份图；适配到 Director 画布 |
+| `reference_image_2` | IMAGE | edit_pose 的目标骨架，或 replace_person 的完整目标场景图 |
+| `reference_image_3` | IMAGE | 仅 replace_person：目标骨架 |
 
 尺寸支持 64–2048。`background_mode` 只影响生成指令，pose_control 固定黑底。
 可选 `image` 用于明确点击后的姿态导入，也可作为实验性原图叠加来源。普通运行只使用你已经编辑并保存的姿态，绝不会自动重识别并覆盖它。
 Qwen 的身份参考仍需直接接 `image_1`；姿态来源图和身份参考图可以是不同图片。
+以上直接接线适用于原 `director` 模式；另外两种模式使用下面的专用示例。
+`director` 模式不产生 reference_image_1/2/3；edit_pose 不产生 reference_image_3，不要连接这些空输出。
+
+## 两种实际场景 / v0.4.0
+
+| 模式 | Director 的 `image` | `identity_image` | 要保留的内容 |
+|---|---|---|---|
+| `edit_pose` | 同一个人所在的原场景 | 不需要 | 人物身份、服装、场景和相机，只编辑动作 |
+| `replace_person` | image2：目标场景与姿态 | image1：替换人物 | 使用 image1 的人物，保留 image2 的场景与目标姿态 |
+
+`identity_scope` 默认 **identity_only**：B 提供脸、发型和体型，保留 A / image2 每张图的服装与鞋子。
+`full_appearance` 才会连 B 的衣服一起带过去。它们是生成指令，不是精确身体重建或像素级换脸。
+
+- [场景 1 工作流](examples/qwen21_director_edit_pose.json)：点击「从图片导入姿态」，修改关节后 Run。示例已导入教室人物，并只修改右臂为举手。
+- [场景 2 工作流](examples/qwen21_director_replace_person.json)：身份图与场景图分开加载。姿态从 `image`（场景图）导入；5%–10% 叠加如开启，也取这张场景图。
+- 场景 2 示例的 `prompt_prefix` 明确描述了演示人物与衣服；换素材时一起修改。纯“image1 替换 image2”的泛化指令在本机测试中可能不执行身份替换。
+- [配套素材](examples/scenarios) 中的两张 PNG 放入 ComfyUI/input；原有 `examples/reference.png` 放入 input 并命名 `qwen21_director_reference_20260928.png`。本机已安装素材。
+- 示例把 reference_image 输出接到 Qwen 编码器的相应图像槽，`resolution=0`。这样编码器依据已统一的画布决定输出尺寸，避免身份照的比例改变目标场景。
+- 保持来源图的比例，优先先导入姿态再编辑关节。这两种模式保留源场景视点；`background_mode` 和 `framing` 的提示词覆盖仅在原 `director` 模式生效。
+- `pose_image_reference` 指编码器是否额外接入骨架：edit_pose 的 image_2，或 replace_person 的 image_3；关闭时骨架仅经过 ControlNet，完整场景图仍须保留。
+
+这是生成式场景编辑，不是背景像素锁定或带遮罩的局部合成；多人选择只决定导入哪具骨架，不能保证模型只替换该人物。
+实际通过和失败的测试、默认配置依据见 [两种场景验证](docs/SCENARIOS.md)。
+
+### A 数据集 → B 身份 LoRA 候选集
+
+提供 [批量脚本](scripts/batch_replace_dataset.py)，默认只生成清单；加 `--run` 才上传并执行。
+默认使用 B 身份、A 服装；每张 A 自动检测/拟合姿态，按源图比例生成，支持断点恢复并记录种子、输入哈希、实际 API 图和 prompt ID。
+多人、检测失败或明显拟合错误的图片转为人工检查，不猜测目标人物。
+生成图片只进入 `pending`，不自动变成批准的训练集，也不复制 A 的 caption 作为 B 的训练标签。
+命令、复核标准和当前限制见 [数据集批量流程](docs/DATASET_WORKFLOW.md)。
 
 ## Integrated ControlNet / 内置姿态控制（v0.3.0）
 

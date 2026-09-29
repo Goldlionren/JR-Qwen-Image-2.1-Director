@@ -1,6 +1,6 @@
 [project]
 name = "jr-qwen-image-2.1-director"
-version = "0.3.1"
+version = "0.4.0"
 description = "JR Qwen Image 2.1 Director — independent camera, actor rig and pose projection"
 requires-python = ">=3.10"
 license = "GPL-3.0-or-later"

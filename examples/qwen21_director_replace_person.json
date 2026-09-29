@@ -1,8 +1,8 @@
 {
-  "id": "ebf8dffb-887b-456e-b27d-f30bbac6f533",
+  "id": "63da9c43-445c-5c56-8d1e-33423ec32e9e",
   "revision": 0,
-  "last_node_id": 23,
-  "last_link_id": 26,
+  "last_node_id": 24,
+  "last_link_id": 32,
   "nodes": [
     {
       "id": 1,
@@ -94,7 +94,7 @@
           "name": "CLIP",
           "type": "CLIP",
           "links": [
-            13
+            27
           ]
         }
       ],
@@ -127,9 +127,9 @@
           "name": "VAE",
           "type": "VAE",
           "links": [
-            14,
             15,
-            26
+            26,
+            30
           ]
         }
       ],
@@ -158,27 +158,27 @@
         {
           "name": "clip",
           "type": "CLIP",
-          "link": 13
+          "link": 27
         },
         {
           "name": "images.image_1",
           "type": "IMAGE",
-          "link": 2
+          "link": 28
         },
         {
           "name": "images.image_2",
           "type": "IMAGE",
-          "link": 22
+          "link": 29
         },
         {
           "name": "vae",
           "type": "VAE",
-          "link": 14
+          "link": 30
         },
         {
           "name": "prompt",
           "type": "STRING",
-          "link": 21,
+          "link": 31,
           "widget": {
             "name": "prompt"
           }
@@ -213,9 +213,9 @@
       "widgets_values": [
         "",
         "",
-        512
+        0
       ],
-      "title": "JR · 3. 双参考图编码"
+      "title": "JR · 人物身份 / 完整场景双图编码"
     },
     {
       "id": 11,
@@ -237,7 +237,6 @@
           "name": "IMAGE",
           "type": "IMAGE",
           "links": [
-            2,
             24
           ]
         },
@@ -250,9 +249,9 @@
       "properties": {
         "Node name for S&R": "LoadImage"
       },
-      "title": "JR · 1. 身份参考 / 可选姿态来源",
+      "title": "JR · image2 场景和姿态来源",
       "widgets_values": [
-        "qwen21_director_reference_20260928.png",
+        "jr_director_classroom_raised.png",
         "image"
       ]
     },
@@ -380,7 +379,7 @@
         "Node name for S&R": "SaveImage"
       },
       "widgets_values": [
-        "JR_Qwen_Director_ControlNet"
+        "JR_Director_replace_person"
       ]
     },
     {
@@ -392,7 +391,7 @@
       ],
       "size": [
         800,
-        1220
+        1280
       ],
       "flags": {},
       "order": 0,
@@ -416,7 +415,7 @@
         {
           "name": "identity_image",
           "type": "IMAGE",
-          "link": null
+          "link": 32
         }
       ],
       "outputs": [
@@ -424,22 +423,18 @@
           "name": "director_prompt",
           "type": "STRING",
           "links": [
-            21
+            31
           ]
         },
         {
           "name": "pose_control",
           "type": "IMAGE",
-          "links": [
-            22
-          ]
+          "links": []
         },
         {
           "name": "pose_preview",
           "type": "IMAGE",
-          "links": [
-            23
-          ]
+          "links": []
         },
         {
           "name": "camera_info",
@@ -466,17 +461,23 @@
         {
           "name": "control_image",
           "type": "IMAGE",
-          "links": []
+          "links": [
+            23
+          ]
         },
         {
           "name": "reference_image_1",
           "type": "IMAGE",
-          "links": []
+          "links": [
+            28
+          ]
         },
         {
           "name": "reference_image_2",
           "type": "IMAGE",
-          "links": []
+          "links": [
+            29
+          ]
         },
         {
           "name": "reference_image_3",
@@ -488,21 +489,21 @@
         "Node name for S&R": "QwenImage21Director"
       },
       "widgets_values": [
-        "{\"version\": 1, \"camera\": {\"azimuth\": 45, \"elevation\": 0, \"distance\": 3.1, \"fov\": 40, \"roll\": 0, \"target\": [0, 0.95, 0]}, \"actor\": {\"position\": [0, 0, 0], \"yaw\": 0, \"pitch\": 0, \"roll\": 0, \"scale\": 1}, \"pose\": {\"skeleton_type\": \"director_body_v1\", \"preset\": \"Walking\", \"joints\": {\"pelvis\": [0, 0, 0], \"spine\": [0, 0, 0], \"chest\": [0, 0, 0], \"neck\": [0, 0, 0], \"head\": [0, 0, 0], \"nose\": [0, 0, 0], \"right_eye\": [0, 0, 0], \"left_eye\": [0, 0, 0], \"right_ear\": [0, 0, 0], \"left_ear\": [0, 0, 0], \"right_shoulder\": [20, 0, 0], \"right_elbow\": [0, 0, 0], \"right_wrist\": [0, 0, 0], \"left_shoulder\": [-25, 0, 0], \"left_elbow\": [-20, 0, 0], \"left_wrist\": [0, 0, 0], \"right_hip\": [-26, 0, 0], \"right_knee\": [0, 0, 0], \"right_ankle\": [0, 0, 0], \"left_hip\": [22, 0, 0], \"left_knee\": [-32, 0, 0], \"left_ankle\": [0, 0, 0]}}, \"render\": {\"width\": 512, \"height\": 512, \"background\": \"black\"}, \"ui\": {\"mode\": \"CAMERA\", \"selected_joint\": \"right_shoulder\", \"view\": \"stage\"}}",
+        "{\"version\": 1, \"camera\": {\"azimuth\": 0.0, \"elevation\": 0.0, \"distance\": 5.930648445173607, \"fov\": 20.0, \"roll\": 0.0, \"target\": [0.001524837015870601, 0.8765785993284646, 0.0]}, \"actor\": {\"position\": [0.0, 0.0, 0.0], \"yaw\": 0.0, \"pitch\": 0.0, \"roll\": 0.0, \"scale\": 1.0}, \"pose\": {\"skeleton_type\": \"director_body_v1\", \"preset\": \"Imported image\", \"joints\": {\"pelvis\": [-10.706562728801801, -25.55083171357103, -3.487222257225982], \"spine\": [-29.503413139647872, -14.100466100483118, 39.53889697416021], \"chest\": [7.748241193122133, -5.119257855762081, -54.05156958995033], \"neck\": [14.698559067586297, 21.751626959454704, 20.603281180279286], \"head\": [15.296786885633024, 14.497209592301914, -9.747611656479835], \"nose\": [0.0, 0.0, 0.0], \"right_eye\": [0.0, 0.0, 0.0], \"left_eye\": [0.0, 0.0, 0.0], \"right_ear\": [0.0, 0.0, 0.0], \"left_ear\": [0.0, 0.0, 0.0], \"right_shoulder\": [-5.339427666461644, 4.2997698385711045, 28.494247048087615], \"right_elbow\": [-6.372741135240277, 25.813776566214624, -157.0070490054821], \"right_wrist\": [0.0, 0.0, 0.0], \"left_shoulder\": [8.53904268778539, 3.3418352663284465, 8.520337709184806], \"left_elbow\": [3.924183163231874, 2.1980746088637106, 15.598640387674267], \"left_wrist\": [0.0, 0.0, 0.0], \"right_hip\": [13.478449682437917, 0.30385528201732187, 2.4915254493083956], \"right_knee\": [15.063338022570644, -3.942141600732499, -12.857060284059132], \"right_ankle\": [0.0, 0.0, 0.0], \"left_hip\": [12.86227158454269, -1.7545727762131944, -6.887784914121515], \"left_knee\": [14.306359146462324, -2.8473233564179243, -9.188745842286137], \"left_ankle\": [0.0, 0.0, 0.0]}}, \"render\": {\"width\": 512, \"height\": 512, \"background\": \"black\"}, \"ui\": {\"mode\": \"POSE\", \"selected_joint\": \"right_shoulder\", \"view\": \"camera\"}}",
         512,
         512,
         "character",
-        "plain white",
+        "preserve",
         "auto",
-        "",
+        "The replacement identity from image 1 is the adult male character with short dark hair and his distinctive face. Replace the blonde woman in image 2 with him, wearing her burgundy cardigan, cream blouse, blue jeans and white sneakers, in her raised-hand pose. Keep the classroom unchanged.",
         "",
         "model_patches/qwen_image_2.1_fun_controlnet_union_int8_convrot.safetensors",
-        1.0,
+        0.25,
         0.0,
-        1.0,
-        true,
-        0.0,
-        "director",
+        0.6,
+        false,
+        0.05,
+        "replace_person",
         "identity_only"
       ]
     },
@@ -531,7 +532,7 @@
       "properties": {
         "Node name for S&R": "PreviewImage"
       },
-      "title": "JR · 最终姿态控制图"
+      "title": "JR · 实际 ControlNet 控制图"
     },
     {
       "id": 23,
@@ -542,7 +543,7 @@
       ],
       "size": [
         780,
-        345
+        575
       ],
       "flags": {},
       "order": 11,
@@ -552,10 +553,48 @@
       "title": "JR · 使用说明",
       "properties": {},
       "widgets_values": [
-        "JR Qwen Image 2.1 Director · ControlNet Example\n\n1. 在左侧 Load Image 换成你的参考图片。\n2. Director 已选择 INT8 Fun Union，强度 1.0，控制区间 0–1。\n3. 默认示范：Walking 行走 + 相机方位角 45°；在导演台继续调整。\n4. 如需从图片起步：点击「从图片导入姿态」，选择人物，再修改。\n5. 点击 Run，右侧保存最终生成图。默认 512 × 512、25 步、CFG 1。\n\nControlNet 已内置在导演台，controlled_model 已接入采样器。\n身份图 → image_1；pose_control → image_2，同时用于内部 ControlNet。\npose_image_reference 保持开启。无需额外安装 ControlNet 节点或上游 PR。\n新机器请先安装 README 中列出的基础模型、编码器、VAE 和 INT8 控制权重。"
+        "JR Qwen Image 2.1 Director · 场景 2：人物替换\n\n示例素材见仓库 examples/scenarios；本机已安装，可直接 Run。\n换图后请点击导演台「从图片导入姿态」，选择目标人物，再编辑骨架。\n导入会读取 image（场景图），不会读取 identity_image。\n\nimage1 → identity_image，默认只提供 B 的脸、发型与体型。\nimage2 → image，提供场景、构图与目标姿态。\nidentity_scope=identity_only：保留 image2 / A 的每张图服装。\n编码器 image_1 / 2 已接身份 / 完整场景；骨架由内部 ControlNet 控制。\nprompt_prefix 有示例人物描述；换图时一起改成人物的显著特征。\n如自行添加骨架到 image_3，再开启 pose_image_reference。\nreference_opacity=0.05：将场景图淡叠到内部 ControlNet 骨架。可比较 0 / 0.05 / 0.10。\n当前示例针对单人场景；多人先裁切或准备人物遮罩以减少误替换。\n\n画布以 Director width / height 为准，参考图等比例适配。\nControlNet 以低强度 0.25、区间 0–0.6 起步，避免把场景压掉。\n编码器 resolution 保持 0；导入姿态后不要单独改画布比例。\n这两种模式保留原场景视点；background_mode / framing 仅用于 director 模式。\ncontrol_image 可预览实际控制图；深度提取尚未集成。"
       ],
       "color": "#234",
       "bgcolor": "#345"
+    },
+    {
+      "id": 24,
+      "type": "LoadImage",
+      "pos": [
+        -980,
+        150
+      ],
+      "size": [
+        330,
+        314
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            32
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "title": "JR · image1 替换人物身份",
+      "widgets_values": [
+        "qwen21_director_reference_20260928.png",
+        "image"
+      ]
     }
   ],
   "links": [
@@ -568,36 +607,12 @@
       "MODEL"
     ],
     [
-      2,
-      11,
-      0,
-      6,
-      1,
-      "IMAGE"
-    ],
-    [
       12,
       21,
       6,
       7,
       0,
       "MODEL"
-    ],
-    [
-      13,
-      3,
-      0,
-      6,
-      0,
-      "CLIP"
-    ],
-    [
-      14,
-      4,
-      0,
-      6,
-      3,
-      "VAE"
     ],
     [
       15,
@@ -648,25 +663,9 @@
       "IMAGE"
     ],
     [
-      21,
-      21,
-      0,
-      6,
-      4,
-      "STRING"
-    ],
-    [
-      22,
-      21,
-      1,
-      6,
-      2,
-      "IMAGE"
-    ],
-    [
       23,
       21,
-      2,
+      7,
       22,
       0,
       "IMAGE"
@@ -694,6 +693,54 @@
       21,
       2,
       "VAE"
+    ],
+    [
+      27,
+      3,
+      0,
+      6,
+      0,
+      "CLIP"
+    ],
+    [
+      28,
+      21,
+      8,
+      6,
+      1,
+      "IMAGE"
+    ],
+    [
+      29,
+      21,
+      9,
+      6,
+      2,
+      "IMAGE"
+    ],
+    [
+      30,
+      4,
+      0,
+      6,
+      3,
+      "VAE"
+    ],
+    [
+      31,
+      21,
+      0,
+      6,
+      4,
+      "STRING"
+    ],
+    [
+      32,
+      24,
+      0,
+      21,
+      3,
+      "IMAGE"
     ]
   ],
   "groups": [
@@ -704,7 +751,7 @@
         -1460,
         -480,
         920,
-        1490
+        1630
       ],
       "color": "#35556a",
       "font_size": 24,
@@ -717,7 +764,7 @@
         -525,
         -480,
         850,
-        1320
+        1380
       ],
       "color": "#376a62",
       "font_size": 24,

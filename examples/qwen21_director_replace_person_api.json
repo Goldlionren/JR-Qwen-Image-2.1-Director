@@ -1,0 +1,160 @@
+{
+  "1": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "qwen_image_2.1_int8_convrot.safetensors",
+      "weight_dtype": "default"
+    }
+  },
+  "2": {
+    "class_type": "QwenImage21Cache",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "device": "auto",
+      "dtype": "default"
+    }
+  },
+  "3": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen3vl_8b_int8_convrot.safetensors",
+      "type": "qwen_image",
+      "device": "default"
+    }
+  },
+  "4": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
+    }
+  },
+  "5": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "jr_director_classroom_raised.png"
+    }
+  },
+  "6": {
+    "class_type": "QwenImage21Director",
+    "inputs": {
+      "director_state": "{\"version\": 1, \"camera\": {\"azimuth\": 0.0, \"elevation\": 0.0, \"distance\": 5.930648445173607, \"fov\": 20.0, \"roll\": 0.0, \"target\": [0.001524837015870601, 0.8765785993284646, 0.0]}, \"actor\": {\"position\": [0.0, 0.0, 0.0], \"yaw\": 0.0, \"pitch\": 0.0, \"roll\": 0.0, \"scale\": 1.0}, \"pose\": {\"skeleton_type\": \"director_body_v1\", \"preset\": \"Imported image\", \"joints\": {\"pelvis\": [-10.706562728801801, -25.55083171357103, -3.487222257225982], \"spine\": [-29.503413139647872, -14.100466100483118, 39.53889697416021], \"chest\": [7.748241193122133, -5.119257855762081, -54.05156958995033], \"neck\": [14.698559067586297, 21.751626959454704, 20.603281180279286], \"head\": [15.296786885633024, 14.497209592301914, -9.747611656479835], \"nose\": [0.0, 0.0, 0.0], \"right_eye\": [0.0, 0.0, 0.0], \"left_eye\": [0.0, 0.0, 0.0], \"right_ear\": [0.0, 0.0, 0.0], \"left_ear\": [0.0, 0.0, 0.0], \"right_shoulder\": [-5.339427666461644, 4.2997698385711045, 28.494247048087615], \"right_elbow\": [-6.372741135240277, 25.813776566214624, -157.0070490054821], \"right_wrist\": [0.0, 0.0, 0.0], \"left_shoulder\": [8.53904268778539, 3.3418352663284465, 8.520337709184806], \"left_elbow\": [3.924183163231874, 2.1980746088637106, 15.598640387674267], \"left_wrist\": [0.0, 0.0, 0.0], \"right_hip\": [13.478449682437917, 0.30385528201732187, 2.4915254493083956], \"right_knee\": [15.063338022570644, -3.942141600732499, -12.857060284059132], \"right_ankle\": [0.0, 0.0, 0.0], \"left_hip\": [12.86227158454269, -1.7545727762131944, -6.887784914121515], \"left_knee\": [14.306359146462324, -2.8473233564179243, -9.188745842286137], \"left_ankle\": [0.0, 0.0, 0.0]}}, \"render\": {\"width\": 512, \"height\": 512, \"background\": \"black\"}, \"ui\": {\"mode\": \"POSE\", \"selected_joint\": \"right_shoulder\", \"view\": \"camera\"}}",
+      "width": 512,
+      "height": 512,
+      "subject_type": "character",
+      "background_mode": "preserve",
+      "framing": "auto",
+      "prompt_prefix": "The replacement identity from image 1 is the adult male character with short dark hair and his distinctive face. Replace the blonde woman in image 2 with him, wearing her burgundy cardigan, cream blouse, blue jeans and white sneakers, in her raised-hand pose. Keep the classroom unchanged.",
+      "prompt_suffix": "",
+      "image": [
+        "5",
+        0
+      ],
+      "model": [
+        "2",
+        0
+      ],
+      "vae": [
+        "4",
+        0
+      ],
+      "controlnet_name": "model_patches/qwen_image_2.1_fun_controlnet_union_int8_convrot.safetensors",
+      "control_strength": 0.25,
+      "control_start": 0.0,
+      "control_end": 0.6,
+      "pose_image_reference": false,
+      "reference_opacity": 0.05,
+      "task_mode": "replace_person",
+      "identity_image": [
+        "12",
+        0
+      ],
+      "identity_scope": "identity_only"
+    }
+  },
+  "7": {
+    "class_type": "TextEncodeQwenImage21",
+    "inputs": {
+      "clip": [
+        "3",
+        0
+      ],
+      "vae": [
+        "4",
+        0
+      ],
+      "prompt": [
+        "6",
+        0
+      ],
+      "negative_prompt": "",
+      "resolution": 0,
+      "images.image_1": [
+        "6",
+        8
+      ],
+      "images.image_2": [
+        "6",
+        9
+      ]
+    }
+  },
+  "8": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": [
+        "6",
+        6
+      ],
+      "positive": [
+        "7",
+        0
+      ],
+      "negative": [
+        "7",
+        1
+      ],
+      "latent_image": [
+        "7",
+        2
+      ],
+      "seed": 21003,
+      "steps": 25,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0
+    }
+  },
+  "9": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "8",
+        0
+      ],
+      "vae": [
+        "4",
+        0
+      ]
+    }
+  },
+  "10": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "9",
+        0
+      ],
+      "filename_prefix": "JR_Director_replace_person"
+    }
+  },
+  "12": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "qwen21_director_reference_20260928.png"
+    }
+  }
+}

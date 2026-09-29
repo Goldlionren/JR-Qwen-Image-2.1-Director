@@ -83,4 +83,25 @@ class DirectorTests(unittest.TestCase):
         s['actor']['position']=[1,0,0]
         self.assertNotEqual(json.loads(build_prompt(s)[1])['effective_relative_azimuth'],72)
 
+    def test_scenario_prompts_separate_identity_scene_and_target_pose(self):
+        state=apply_preset(default_state(),'Right Arm Raised')
+        edit,info,_=build_prompt(state,task_mode='edit_pose',background_mode='plain white')
+        self.assertIn('Edit <image1>',edit)
+        self.assertIn('according to <image2>',edit)
+        self.assertNotIn('<image3>',edit)
+        self.assertNotIn('Use a plain white background',edit)
+        self.assertEqual(json.loads(info)['task_mode'],'edit_pose')
+        replace,_,_=build_prompt(state,task_mode='replace_person')
+        self.assertIn('identity, face',replace)
+        self.assertIn('lighting from image 2',replace)
+        self.assertIn('Use <image3> for the final pose',replace)
+        self.assertNotIn('environment from <image1>',replace)
+        self.assertIn('Keep the outfit, shoes and clothing accessories from image 2',replace)
+        full,_,_=build_prompt(state,task_mode='replace_person',identity_scope='full_appearance')
+        self.assertIn('outfit and accessories from image 1',full)
+        self.assertNotIn('Keep the outfit, shoes',full)
+        control,_,_=build_prompt(state,task_mode='replace_person',controlnet=True)
+        self.assertNotIn('<image3>',control)
+        with self.assertRaises(ValueError):build_prompt(state,task_mode='wrong')
+
 if __name__=='__main__': unittest.main()

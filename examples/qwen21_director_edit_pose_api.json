@@ -34,17 +34,17 @@
   "5": {
     "class_type": "LoadImage",
     "inputs": {
-      "image": "qwen21_director_reference_20260928.png"
+      "image": "jr_director_classroom_source.png"
     }
   },
   "6": {
     "class_type": "QwenImage21Director",
     "inputs": {
-      "director_state": "{\"version\": 1, \"camera\": {\"azimuth\": 45, \"elevation\": 0, \"distance\": 3.1, \"fov\": 40, \"roll\": 0, \"target\": [0, 0.95, 0]}, \"actor\": {\"position\": [0, 0, 0], \"yaw\": 0, \"pitch\": 0, \"roll\": 0, \"scale\": 1}, \"pose\": {\"skeleton_type\": \"director_body_v1\", \"preset\": \"Walking\", \"joints\": {\"pelvis\": [0, 0, 0], \"spine\": [0, 0, 0], \"chest\": [0, 0, 0], \"neck\": [0, 0, 0], \"head\": [0, 0, 0], \"nose\": [0, 0, 0], \"right_eye\": [0, 0, 0], \"left_eye\": [0, 0, 0], \"right_ear\": [0, 0, 0], \"left_ear\": [0, 0, 0], \"right_shoulder\": [20, 0, 0], \"right_elbow\": [0, 0, 0], \"right_wrist\": [0, 0, 0], \"left_shoulder\": [-25, 0, 0], \"left_elbow\": [-20, 0, 0], \"left_wrist\": [0, 0, 0], \"right_hip\": [-26, 0, 0], \"right_knee\": [0, 0, 0], \"right_ankle\": [0, 0, 0], \"left_hip\": [22, 0, 0], \"left_knee\": [-32, 0, 0], \"left_ankle\": [0, 0, 0]}}, \"render\": {\"width\": 512, \"height\": 512, \"background\": \"black\"}, \"ui\": {\"mode\": \"CAMERA\", \"selected_joint\": \"right_shoulder\", \"view\": \"stage\"}}",
+      "director_state": "{\"version\": 1, \"camera\": {\"azimuth\": 0.0, \"elevation\": 0.0, \"distance\": 6.006259975201637, \"fov\": 20.0, \"roll\": 0.0, \"target\": [0.009396004354582797, 0.8788709151531563, 0.0]}, \"actor\": {\"position\": [0.0, 0.0, 0.0], \"yaw\": 0.0, \"pitch\": 0.0, \"roll\": 0.0, \"scale\": 1.0}, \"pose\": {\"skeleton_type\": \"director_body_v1\", \"preset\": \"Imported image + right arm raised\", \"joints\": {\"pelvis\": [-16.04305435044938, -22.33900448210497, -4.27707770608498], \"spine\": [-30.486871255480605, -16.077319761448976, 31.128983667335774], \"chest\": [16.46473837535098, -15.571425653743534, -48.268036589655324], \"neck\": [13.647265753032523, 22.207794632765793, 14.47254024907166], \"head\": [8.763179904796662, 17.485391344804672, -9.962266455414152], \"nose\": [0.0, 0.0, 0.0], \"right_eye\": [0.0, 0.0, 0.0], \"left_eye\": [0.0, 0.0, 0.0], \"right_ear\": [0.0, 0.0, 0.0], \"left_ear\": [0.0, 0.0, 0.0], \"right_shoulder\": [0, 0, -158], \"right_elbow\": [-18, 0, -10], \"right_wrist\": [0.0, 0.0, 0.0], \"left_shoulder\": [4.34717912849156, 1.2742179179135027, 5.36619008384039], \"left_elbow\": [0.7998785357293522, 1.1140729349472043, 18.813426477192742], \"left_wrist\": [0.0, 0.0, 0.0], \"right_hip\": [18.10752318273651, 0.0532550531448489, 3.2486389086283225], \"right_knee\": [14.998968055212002, -3.8062984005201455, -12.674318928517744], \"right_ankle\": [0.0, 0.0, 0.0], \"left_hip\": [17.60915148965578, -2.2058630722890964, -7.022785138388613], \"left_knee\": [15.09015608245117, -2.662400494462084, -8.214236564414453], \"left_ankle\": [0.0, 0.0, 0.0]}}, \"render\": {\"width\": 512, \"height\": 512, \"background\": \"black\"}, \"ui\": {\"mode\": \"POSE\", \"selected_joint\": \"right_shoulder\", \"view\": \"camera\"}}",
       "width": 512,
       "height": 512,
       "subject_type": "character",
-      "background_mode": "plain white",
+      "background_mode": "preserve",
       "framing": "auto",
       "prompt_prefix": "",
       "prompt_suffix": "",
@@ -61,12 +61,12 @@
         0
       ],
       "controlnet_name": "model_patches/qwen_image_2.1_fun_controlnet_union_int8_convrot.safetensors",
-      "control_strength": 1.0,
+      "control_strength": 0.25,
       "control_start": 0.0,
-      "control_end": 1.0,
+      "control_end": 0.6,
       "pose_image_reference": true,
       "reference_opacity": 0.0,
-      "task_mode": "director"
+      "task_mode": "edit_pose"
     }
   },
   "7": {
@@ -85,14 +85,14 @@
         0
       ],
       "negative_prompt": "",
-      "resolution": 512,
+      "resolution": 0,
       "images.image_1": [
-        "5",
-        0
+        "6",
+        8
       ],
       "images.image_2": [
         "6",
-        1
+        9
       ]
     }
   },
@@ -115,7 +115,7 @@
         "7",
         2
       ],
-      "seed": 21001,
+      "seed": 21003,
       "steps": 25,
       "cfg": 1.0,
       "sampler_name": "euler",
@@ -143,7 +143,7 @@
         "9",
         0
       ],
-      "filename_prefix": "JR_Qwen_Director_ControlNet"
+      "filename_prefix": "JR_Director_edit_pose"
     }
   }
 }

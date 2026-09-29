@@ -67,7 +67,10 @@ def infer_framing(state):
     return "close-up"
 
 
-def build_prompt(state, subject_type="character", background_mode="preserve", framing="auto", controlnet=False):
+def build_prompt(state, subject_type="character", background_mode="preserve", framing="auto", controlnet=False,
+                 task_mode="director", identity_scope="identity_only"):
+    if identity_scope not in ('identity_only', 'full_appearance'):
+        raise ValueError('JR Director: unknown identity_scope.')
     c,a = state["camera"],state["actor"]
     pos, *_ = camera_basis(state)
     points,_ = forward_kinematics(state)
@@ -97,7 +100,41 @@ def build_prompt(state, subject_type="character", background_mode="preserve", fr
               "or change the outfit. " + background)
     if frame == "full body":
         prompt += " Include the entire head, both hands and both feet inside the frame, with clear margin around all limbs. Do not crop raised hands."
+    if task_mode in ('edit_pose', 'replace_person'):
+        guide = 'the supplied pose control' if controlnet else ('<image2>' if task_mode == 'edit_pose' else '<image3>')
+        scene = '<image1>' if task_mode == 'edit_pose' else '<image2>'
+        if task_mode == 'edit_pose':
+            prompt = ('Edit <image1>: keep the same person in the same scene. Change only the body pose according to '
+                      f'{guide}. Preserve the person\'s identity, face, hairstyle, clothing, accessories and body proportions. ')
+        else:
+            prompt = ('Replace the person at the target skeleton location in <image2> with the person from <image1>. '
+                      'The replacement person must have the identity, face, hairstyle, outfit and accessories from <image1>, '
+                      'instead of those of the original person in <image2>. '
+                      f'Use {guide} for the final pose, orientation, position and scale. ')
+        prompt += (f'Keep the scene, background objects, layout, perspective, camera position, framing and lighting from {scene}. '
+                   'Do not turn this into a studio portrait or recompose the scene. '
+                   f'Match the projected limb positions in {guide}; it is already in the target scene coordinates. '
+                   'Do not rotate the guide again or draw its colored bones, lines or black background. ' +
+                   (f'The target body pose is: {pose} ' if task_mode == 'edit_pose' else '') +
+                   'Adjust body shading and contact shadows naturally and reconstruct only areas newly revealed by the edit. '
+                   'Keep other people and unrelated objects unchanged.')
+    elif task_mode != 'director':
+        raise ValueError('JR Director: unknown task_mode.')
+    if task_mode == 'replace_person':
+        guide = 'the supplied pose control' if controlnet else '<image3>'
+        identity = ('Use the identity, face, hairstyle and body proportions from image 1. '
+                    'Keep the outfit, shoes and clothing accessories from image 2; fit those clothes to the replacement body. '
+                    'Do not copy the clothes or background from image 1. ' if identity_scope == 'identity_only' else
+                    'Use the identity, face, hairstyle, body proportions, outfit and accessories from image 1. ')
+        prompt = ('Replace the person at the target skeleton location in image 2 with the person from image 1. '
+                  + identity +
+                  'Give the replacement person exactly the same body pose and location as the person in image 2. '
+                  f'Use {guide} for the final pose adjustments, orientation, position and scale. '
+                  'Keep the entire scene, background objects, camera, framing and lighting from image 2. '
+                  'At the target location there should be one replacement person, with the identity from image 1. '
+                  'Render natural body shading and contact shadows. Keep unrelated people and objects unchanged.')
     info = json.dumps({"azimuth": c["azimuth"], "elevation": c["elevation"], "distance": c["distance"], "fov": c["fov"],
                        "relative_azimuth": (c["azimuth"]-a["yaw"]) % 360, "effective_relative_azimuth": round(relative,3),
-                       "eye_level_elevation": round(eye_angle,3), "view": label, "framing": frame}, indent=2)
+                       "eye_level_elevation": round(eye_angle,3), "view": label, "framing": frame,
+                       "task_mode": task_mode, "identity_scope": identity_scope}, indent=2)
     return prompt, info, pose
