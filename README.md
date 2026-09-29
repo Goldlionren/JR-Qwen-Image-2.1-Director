@@ -101,14 +101,14 @@ Qwen 的身份参考仍需直接接 `image_1`；姿态来源图和身份参考�
 | 模式 | Director 的 `image` | `identity_image` | 要保留的内容 |
 |---|---|---|---|
 | `edit_pose` | 同一个人所在的原场景 | 不需要 | 人物身份、服装、场景和相机，只编辑动作 |
-| `replace_person` | image2：目标场景与姿态 | image1：替换人物 | 使用 image1 的人物，保留 image2 的场景与目标姿态 |
+| `replace_person` | `<image2>`：目标场景与姿态 | `<image1>`：替换人物 | 使用 `<image1>` 的人物，保留 `<image2>` 的场景与目标姿态 |
 
-`identity_scope` 默认 **identity_only**：B 提供脸、发型和体型，保留 A / image2 每张图的服装与鞋子。
+`identity_scope` 默认 **identity_only**：B 提供脸、发型和体型，保留 A / `<image2>` 每张图的服装与鞋子。
 `full_appearance` 才会连 B 的衣服一起带过去。它们是生成指令，不是精确身体重建或像素级换脸。
 
 - [场景 1 工作流](examples/qwen21_director_edit_pose.json)：点击「从图片导入姿态」，修改关节后 Run。示例已导入教室人物，并只修改右臂为举手。
 - [场景 2 工作流](examples/qwen21_director_replace_person.json)：身份图与场景图分开加载。姿态从 `image`（场景图）导入；5%–10% 叠加如开启，也取这张场景图。
-- 场景 2 示例的 `prompt_prefix` 明确描述了演示人物与衣服；换素材时一起修改。纯“image1 替换 image2”的泛化指令在本机测试中可能不执行身份替换。
+- 两个示例默认使用通用提示词，`prompt_prefix` / `prompt_suffix` 留空；身份、服装和场景直接引用 `<image1>` / `<image2>`，动作以最终骨架为准。换素材后重新导入姿态即可开始测试，无需先写人物、衣服颜色或动作描述。本机通用提示词测试中，场景 1 动作修改有效，场景 2 仍未替换身份；后者需要继续验证，必要时可用前后缀补充约束，详见 [验证记录](docs/SCENARIOS.md)。
 - [配套素材](examples/scenarios) 中的两张 PNG 放入 ComfyUI/input；原有 `examples/reference.png` 放入 input 并命名 `qwen21_director_reference_20260928.png`。本机已安装素材。
 - 示例把 reference_image 输出接到 Qwen 编码器的相应图像槽，`resolution=0`。这样编码器依据已统一的画布决定输出尺寸，避免身份照的比例改变目标场景。
 - 保持来源图的比例，优先先导入姿态再编辑关节。这两种模式保留源场景视点；`background_mode` 和 `framing` 的提示词覆盖仅在原 `director` 模式生效。

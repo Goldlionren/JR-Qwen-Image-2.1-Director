@@ -46,7 +46,7 @@
       "subject_type": "character",
       "background_mode": "preserve",
       "framing": "auto",
-      "prompt_prefix": "The replacement identity from image 1 is the adult male character with short dark hair and his distinctive face. Replace the blonde woman in image 2 with him, wearing her burgundy cardigan, cream blouse, blue jeans and white sneakers, in her raised-hand pose. Keep the classroom unchanged.",
+      "prompt_prefix": "",
       "prompt_suffix": "",
       "image": [
         "5",

@@ -130,10 +130,10 @@ def graph_for(job,config,identity_name,source_name,state,run_id):
     graph['6']['inputs'].update(director_state=json.dumps(state),width=state['render']['width'],height=state['render']['height'],
         task_mode='replace_person',identity_scope=config['identity_scope'],pose_image_reference=False,
         reference_opacity=config['reference_opacity'],control_strength=config['control_strength'],control_end=config['control_end'],
-        prompt_prefix='The replacement identity from image 1 is: '+config['identity_description'].strip(),prompt_suffix='')
+        prompt_prefix='The replacement identity from <image1> is: '+config['identity_description'].strip(),prompt_suffix='')
     graph['7']['inputs']['resolution']=0
     if job.get('scene_description'):
-        graph['6']['inputs']['prompt_prefix']+='\nPreserve from image 2: '+job['scene_description'].strip()
+        graph['6']['inputs']['prompt_prefix']+='\nPreserve from <image2>: '+job['scene_description'].strip()
     graph['7']['inputs'].pop('images.image_3',None)
     graph['8']['inputs']['seed']=job['seed']
     graph['10']['inputs']['filename_prefix']=f'JR_Director_Batch/{run_id}/{job["id"]}'
