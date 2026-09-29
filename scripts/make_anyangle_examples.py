@@ -33,9 +33,7 @@ for external in (False, True):
     director['widgets_values'][6:8] = ['','']
     director['widgets_values'][8] = 'disabled'
     director['widgets_values'][9:16] = [.25,0.,.6,False,0.,'any_angle','identity_only']
-    director['widgets_values'].extend(['QI2.1_AnyAngle.safetensors',1.,guide])
-    director['inputs'].append({'name':'angle_reference','type':'IMAGE','link':None})
-    director['outputs'].append({'name':'angle_preview','type':'IMAGE','links':[]})
+    director['widgets_values'][16:] = ['QI2.1_AnyAngle.safetensors',1.,guide,'auto',False,'disabled',.25]
     director['size'] = [800,1420]
     nodes[11]['title'] = 'JR · <image2> 原人物 / 原始画面'
     nodes[11]['widgets_values'] = ['qwen21_director_reference_20260928.png','image']
@@ -53,7 +51,7 @@ for external in (False, True):
         loader['widgets_values'] = ['jr_anyangle_coarse60.png','image']
         workflow['nodes'].append(loader)
         link_id = max(l[0] for l in workflow['links']) + 1
-        director['inputs'][-1]['link'] = link_id
+        director['inputs'][4]['link'] = link_id
         workflow['links'].append([link_id,24,0,21,4,'IMAGE'])
         workflow['last_node_id'] = 24
     nodes[23]['size'] = [780,640]

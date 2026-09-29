@@ -46,11 +46,11 @@ def save(path,data):
     temp.replace(path)
 
 
-def plan(source,identity,output,description,scope='identity_only',resolution=512,opacity=0.,seed=21003,scene_descriptions=None):
+def plan(source,identity,output,description,scope='identity_only',resolution=512,opacity=0.,seed=21003,scene_descriptions=None,auto_describe=False):
     source,identity,output=Path(source).resolve(),Path(identity).resolve(),Path(output).resolve()
     if not source.is_dir() or not identity.is_file():raise ValueError('Source directory / identity image does not exist')
     if output==source or source in output.parents:raise ValueError('Keep the output directory outside the source dataset')
-    if not description.strip():raise ValueError('Describe B identity (face / hair / body); omit B clothing in identity_only mode')
+    if not description.strip() and not auto_describe:raise ValueError('Provide --identity-description or enable --auto-describe')
     descriptions={}
     if scene_descriptions is not None:
         descriptions=json.loads(Path(scene_descriptions).read_text(encoding='utf-8-sig'))
@@ -60,6 +60,8 @@ def plan(source,identity,output,description,scope='identity_only',resolution=512
             'identity_description':description,'identity_scope':scope,'resolution':resolution,
             'reference_opacity':opacity,'seed':seed,'control_strength':.25,'control_end':.6,
             'scene_descriptions':descriptions}
+    # Preserve old manifest config shape so manual-description runs can resume.
+    if auto_describe:config.update(auto_describe=True,cfg=3)
     path=output/'manifest.json'
     if path.exists():
         manifest=json.loads(path.read_text(encoding='utf-8'))
@@ -130,12 +132,16 @@ def graph_for(job,config,identity_name,source_name,state,run_id):
     graph['6']['inputs'].update(director_state=json.dumps(state),width=state['render']['width'],height=state['render']['height'],
         task_mode='replace_person',identity_scope=config['identity_scope'],pose_image_reference=False,
         reference_opacity=config['reference_opacity'],control_strength=config['control_strength'],control_end=config['control_end'],
-        prompt_prefix='The replacement identity from <image1> is: '+config['identity_description'].strip(),prompt_suffix='')
+        prompt_prefix=('The replacement identity from <image1> is: '+config['identity_description'].strip()) if config['identity_description'].strip() else '',prompt_suffix='',
+        auto_describe=config.get('auto_describe',False))
+    if config.get('auto_describe'):graph['6']['inputs']['clip']=['3',0]
+    else:graph['6']['inputs'].pop('clip',None)
     graph['7']['inputs']['resolution']=0
     if job.get('scene_description'):
         graph['6']['inputs']['prompt_prefix']+='\nPreserve from <image2>: '+job['scene_description'].strip()
     graph['7']['inputs'].pop('images.image_3',None)
     graph['8']['inputs']['seed']=job['seed']
+    graph['8']['inputs']['cfg']=config.get('cfg',1)
     graph['10']['inputs']['filename_prefix']=f'JR_Director_Batch/{run_id}/{job["id"]}'
     return graph
 
@@ -211,7 +217,8 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--source-dir',required=True,type=Path)
     p.add_argument('--identity-image',required=True,type=Path)
-    p.add_argument('--identity-description',required=True)
+    p.add_argument('--identity-description',default='')
+    p.add_argument('--auto-describe',action='store_true',help='Use local Qwen3-VL to describe B identity and each A outfit/scene. No hand-written identity description required; CFG 3.')
     p.add_argument('--scene-descriptions',type=Path,help='Optional reviewed JSON mapping relative A filenames to clothing / action / scene descriptions; do not include A identity')
     p.add_argument('--output-dir',required=True,type=Path)
     p.add_argument('--identity-scope',choices=['identity_only','full_appearance'],default='identity_only')
@@ -228,7 +235,7 @@ def main():
     source_path,output_path=args.source_dir.resolve(),args.output_dir.resolve()
     if output_path==source_path or source_path in output_path.parents:raise ValueError('Keep output outside the source dataset')
     with run_lock(args.output_dir):
-        manifest=plan(args.source_dir,args.identity_image,args.output_dir,args.identity_description,args.identity_scope,args.resolution,args.reference_opacity,args.seed,args.scene_descriptions)
+        manifest=plan(args.source_dir,args.identity_image,args.output_dir,args.identity_description,args.identity_scope,args.resolution,args.reference_opacity,args.seed,args.scene_descriptions,args.auto_describe)
         print(len(manifest['jobs']),'source images;',args.output_dir/'manifest.json',flush=True)
         if args.run:
             if any(j['status']=='submitting' and not j.get('prompt_id') for j in manifest['jobs']):

@@ -1,8 +1,8 @@
 {
-  "id": "2beadaff-cebc-5c21-b29a-a0f3e3f3cc1e",
+  "id": "15fc1693-e054-56ae-bccf-80d5c196412d",
   "revision": 0,
-  "last_node_id": 23,
-  "last_link_id": 31,
+  "last_node_id": 26,
+  "last_link_id": 35,
   "nodes": [
     {
       "id": 1,
@@ -94,7 +94,8 @@
           "name": "CLIP",
           "type": "CLIP",
           "links": [
-            27
+            27,
+            33
           ]
         }
       ],
@@ -215,7 +216,7 @@
         "",
         0
       ],
-      "title": "JR · 原图 / 新姿态双图编码"
+      "title": "JR · 人物身份 / 完整场景双图编码"
     },
     {
       "id": 11,
@@ -249,9 +250,9 @@
       "properties": {
         "Node name for S&R": "LoadImage"
       },
-      "title": "JR · <image1> 原人物和场景",
+      "title": "JR · <image2> 场景和姿态来源",
       "widgets_values": [
-        "jr_director_classroom_source.png",
+        "jr_director_classroom_raised.png",
         "image"
       ]
     },
@@ -307,7 +308,7 @@
         21003,
         "fixed",
         25,
-        1,
+        3,
         "euler",
         "simple",
         1
@@ -379,7 +380,7 @@
         "Node name for S&R": "SaveImage"
       },
       "widgets_values": [
-        "JR_Director_edit_pose"
+        "JR_Director_replace_person_depth"
       ]
     },
     {
@@ -415,7 +416,7 @@
         {
           "name": "identity_image",
           "type": "IMAGE",
-          "link": null
+          "link": 32
         },
         {
           "name": "angle_reference",
@@ -425,7 +426,7 @@
         {
           "name": "clip",
           "type": "CLIP",
-          "link": null
+          "link": 33
         },
         {
           "name": "depth_image",
@@ -507,19 +508,23 @@
         {
           "name": "reference_description",
           "type": "STRING",
-          "links": []
+          "links": [
+            34
+          ]
         },
         {
           "name": "depth_preview",
           "type": "IMAGE",
-          "links": []
+          "links": [
+            35
+          ]
         }
       ],
       "properties": {
         "Node name for S&R": "QwenImage21Director"
       },
       "widgets_values": [
-        "{\"version\": 1, \"camera\": {\"azimuth\": 0.0, \"elevation\": 0.0, \"distance\": 6.006259975201637, \"fov\": 20.0, \"roll\": 0.0, \"target\": [0.009396004354582797, 0.8788709151531563, 0.0]}, \"actor\": {\"position\": [0.0, 0.0, 0.0], \"yaw\": 0.0, \"pitch\": 0.0, \"roll\": 0.0, \"scale\": 1.0}, \"pose\": {\"skeleton_type\": \"director_body_v1\", \"preset\": \"Imported image + right arm raised\", \"joints\": {\"pelvis\": [-16.04305435044938, -22.33900448210497, -4.27707770608498], \"spine\": [-30.486871255480605, -16.077319761448976, 31.128983667335774], \"chest\": [16.46473837535098, -15.571425653743534, -48.268036589655324], \"neck\": [13.647265753032523, 22.207794632765793, 14.47254024907166], \"head\": [8.763179904796662, 17.485391344804672, -9.962266455414152], \"nose\": [0.0, 0.0, 0.0], \"right_eye\": [0.0, 0.0, 0.0], \"left_eye\": [0.0, 0.0, 0.0], \"right_ear\": [0.0, 0.0, 0.0], \"left_ear\": [0.0, 0.0, 0.0], \"right_shoulder\": [0, 0, -158], \"right_elbow\": [-18, 0, -10], \"right_wrist\": [0.0, 0.0, 0.0], \"left_shoulder\": [4.34717912849156, 1.2742179179135027, 5.36619008384039], \"left_elbow\": [0.7998785357293522, 1.1140729349472043, 18.813426477192742], \"left_wrist\": [0.0, 0.0, 0.0], \"right_hip\": [18.10752318273651, 0.0532550531448489, 3.2486389086283225], \"right_knee\": [14.998968055212002, -3.8062984005201455, -12.674318928517744], \"right_ankle\": [0.0, 0.0, 0.0], \"left_hip\": [17.60915148965578, -2.2058630722890964, -7.022785138388613], \"left_knee\": [15.09015608245117, -2.662400494462084, -8.214236564414453], \"left_ankle\": [0.0, 0.0, 0.0]}}, \"render\": {\"width\": 512, \"height\": 512, \"background\": \"black\"}, \"ui\": {\"mode\": \"POSE\", \"selected_joint\": \"right_shoulder\", \"view\": \"camera\"}}",
+        "{\"version\": 1, \"camera\": {\"azimuth\": 0.0, \"elevation\": 0.0, \"distance\": 5.930648445173607, \"fov\": 20.0, \"roll\": 0.0, \"target\": [0.001524837015870601, 0.8765785993284646, 0.0]}, \"actor\": {\"position\": [0.0, 0.0, 0.0], \"yaw\": 0.0, \"pitch\": 0.0, \"roll\": 0.0, \"scale\": 1.0}, \"pose\": {\"skeleton_type\": \"director_body_v1\", \"preset\": \"Imported image\", \"joints\": {\"pelvis\": [-10.706562728801801, -25.55083171357103, -3.487222257225982], \"spine\": [-29.503413139647872, -14.100466100483118, 39.53889697416021], \"chest\": [7.748241193122133, -5.119257855762081, -54.05156958995033], \"neck\": [14.698559067586297, 21.751626959454704, 20.603281180279286], \"head\": [15.296786885633024, 14.497209592301914, -9.747611656479835], \"nose\": [0.0, 0.0, 0.0], \"right_eye\": [0.0, 0.0, 0.0], \"left_eye\": [0.0, 0.0, 0.0], \"right_ear\": [0.0, 0.0, 0.0], \"left_ear\": [0.0, 0.0, 0.0], \"right_shoulder\": [-5.339427666461644, 4.2997698385711045, 28.494247048087615], \"right_elbow\": [-6.372741135240277, 25.813776566214624, -157.0070490054821], \"right_wrist\": [0.0, 0.0, 0.0], \"left_shoulder\": [8.53904268778539, 3.3418352663284465, 8.520337709184806], \"left_elbow\": [3.924183163231874, 2.1980746088637106, 15.598640387674267], \"left_wrist\": [0.0, 0.0, 0.0], \"right_hip\": [13.478449682437917, 0.30385528201732187, 2.4915254493083956], \"right_knee\": [15.063338022570644, -3.942141600732499, -12.857060284059132], \"right_ankle\": [0.0, 0.0, 0.0], \"left_hip\": [12.86227158454269, -1.7545727762131944, -6.887784914121515], \"left_knee\": [14.306359146462324, -2.8473233564179243, -9.188745842286137], \"left_ankle\": [0.0, 0.0, 0.0]}}, \"render\": {\"width\": 512, \"height\": 512, \"background\": \"black\"}, \"ui\": {\"mode\": \"POSE\", \"selected_joint\": \"right_shoulder\", \"view\": \"camera\"}}",
         512,
         512,
         "character",
@@ -531,16 +536,16 @@
         0.25,
         0.0,
         0.6,
-        true,
-        0.0,
-        "edit_pose",
+        false,
+        0.05,
+        "replace_person",
         "identity_only",
         "disabled",
         1.0,
         "external",
         "auto",
-        false,
-        "disabled",
+        true,
+        "depth_anything_v2_vitl_fp16.safetensors",
         0.25
       ]
     },
@@ -590,10 +595,109 @@
       "title": "JR · 使用说明",
       "properties": {},
       "widgets_values": [
-        "JR Qwen Image 2.1 Director · 场景 1：同人物同场景改动作\n\n示例素材见仓库 examples/scenarios；本机已安装，可直接 Run。\n换图后请点击导演台「从图片导入姿态」，选择目标人物，再编辑骨架。\n导入会读取 image（场景图），不会读取 identity_image。\n\n通用提示词由 Director 按模式自动生成；默认无需填写 prompt_prefix / prompt_suffix。\n不限定人物性别、发型、服装颜色、场景或具体动作；最终动作以骨架为准。\n\nsource image 同时提供身份和场景。\n默认姿态已从示例照片导入，只修改右臂为举手。\n编码器 image_1 / 2 已接原图 / 修改后骨架。\nreference_opacity=0，避免原图旧动作与新骨架冲突。\n\n画布以 Director width / height 为准，参考图等比例适配。\nControlNet 以低强度 0.25、区间 0–0.6 起步，避免把场景压掉。\n编码器 resolution 保持 0；导入姿态后不要单独改画布比例。\n这两种模式保留原场景视点；background_mode / framing 仅用于 director 模式。\ncontrol_image 可预览骨架控制图。可选 depth_model 启用自动深度或 external 外部深度，depth_preview 输出实际深度。\n深度默认关闭；改动作时，原图深度可能与新骨架冲突。\ncontrol_backend=auto：新 Core 优先使用官方实现，旧 Core 自动回退。"
+        "JR Qwen Image 2.1 Director · 场景 2：人物替换\n\n示例素材见仓库 examples/scenarios；本机已安装，可直接 Run。\n换图后请点击导演台「从图片导入姿态」，选择目标人物，再编辑骨架。\n导入会读取 image（场景图），不会读取 identity_image。\n\n通用提示词由 Director 按模式自动生成；默认无需填写 prompt_prefix / prompt_suffix。\n不限定人物性别、发型、服装颜色、场景或具体动作；最终动作以骨架为准。\n\n<image1> → identity_image，默认只提供 B 的脸、发型与体型。\n<image2> → image，提供场景、构图与目标姿态。\nidentity_scope=identity_only：保留 <image2> / A 的每张图服装。\nauto_describe 已开启：用现有 Qwen3-VL 自动识别 B 身份和 A 服装，默认无需手写人物特征。\n先检查右侧自动描述；误识别可用 prompt_prefix / prompt_suffix 补充纠正。采样器 CFG=3。\n编码器 image_1 / 2 已接身份 / 完整场景；骨架由内部 ControlNet 控制。\n如自行添加骨架到 image_3，再开启 pose_image_reference。\nreference_opacity=0.05：将场景图淡叠到内部 ControlNet 骨架。可比较 0 / 0.05 / 0.10。\n当前示例针对单人场景；多人先裁切或准备人物遮罩以减少误替换。\n\n画布以 Director width / height 为准，参考图等比例适配。\nControlNet 以低强度 0.25、区间 0–0.6 起步，避免把场景压掉。\n编码器 resolution 保持 0；导入姿态后不要单独改画布比例。\n这两种模式保留原场景视点；background_mode / framing 仅用于 director 模式。\ncontrol_image 可预览骨架控制图。可选 depth_model 启用自动深度或 external 外部深度，depth_preview 输出实际深度。\n深度默认关闭；改动作时，原图深度可能与新骨架冲突。\ncontrol_backend=auto：新 Core 优先使用官方实现，旧 Core 自动回退。\n\n本流程为可选深度对照：读取原场景自动估计深度，在骨架之外叠加 0.25 强度深度控制。\n需要本地 Depth Anything V2 Large 权重；不保证优于默认骨架方案，体型可能更接近 A。"
       ],
       "color": "#234",
       "bgcolor": "#345"
+    },
+    {
+      "id": 24,
+      "type": "LoadImage",
+      "pos": [
+        -980,
+        150
+      ],
+      "size": [
+        330,
+        314
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            32
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "title": "JR · <image1> 替换人物身份",
+      "widgets_values": [
+        "qwen21_director_reference_20260928.png",
+        "image"
+      ]
+    },
+    {
+      "id": 25,
+      "type": "PreviewAny",
+      "pos": [
+        350,
+        950
+      ],
+      "size": [
+        650,
+        250
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "title": "JR · 自动识别的身份 / 服装描述（请检查）",
+      "inputs": [
+        {
+          "name": "source",
+          "type": "*",
+          "link": 34
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewAny"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 26,
+      "type": "PreviewImage",
+      "pos": [
+        350,
+        1250
+      ],
+      "size": [
+        380,
+        400
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 35
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "title": "JR · 实际深度控制图"
     }
   ],
   "links": [
@@ -732,6 +836,38 @@
       6,
       4,
       "STRING"
+    ],
+    [
+      32,
+      24,
+      0,
+      21,
+      3,
+      "IMAGE"
+    ],
+    [
+      33,
+      3,
+      0,
+      21,
+      5,
+      "CLIP"
+    ],
+    [
+      34,
+      21,
+      12,
+      25,
+      0,
+      "STRING"
+    ],
+    [
+      35,
+      21,
+      13,
+      26,
+      0,
+      "IMAGE"
     ]
   ],
   "groups": [

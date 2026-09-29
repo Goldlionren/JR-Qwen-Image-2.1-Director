@@ -10,6 +10,7 @@ from .director.prompt import build_prompt
 class QwenImage21Director(io.ComfyNode):
     @classmethod
     def define_schema(cls):
+        from .director.depth import available_models
         controls = ['disabled'] + [f'{kind}/{name}' for kind in ('model_patches', 'controlnet')
             for name in folder_paths.get_filename_list(kind) if name.endswith('.safetensors')]
         return io.Schema(
@@ -51,13 +52,23 @@ class QwenImage21Director(io.ComfyNode):
                     tooltip='external: connect a target-view 3D/splat render to angle_reference. director_proxy: experimental shaded rig, without source texture or scene geometry.'),
                 io.Image.Input('angle_reference', optional=True,
                     tooltip='AnyAngle external coarse 3D render at the TARGET camera view. Used as <image1>; image is the original <image2>. It is not rotated by the Director. If adding ControlNet, align the rig with this guide.'),
+                io.Combo.Input('control_backend', options=['auto','native','bundled'], default='auto', optional=True,
+                    tooltip='auto: use merged ComfyUI Fun ControlNet when available, otherwise bundled compatibility. native/bundled allow reproducible comparisons. Native weights belong in models/model_patches.'),
+                io.Boolean.Input('auto_describe', default=False, optional=True,
+                    tooltip='replace_person only: use the connected Qwen3-VL CLIP to describe identity and retained outfit/scene locally. Saves manual per-image prompt edits. Review reference_description for mistakes.'),
+                io.Clip.Input('clip', optional=True),
+                io.Combo.Input('depth_model', options=['disabled','external']+list(available_models()), default='disabled', optional=True,
+                    tooltip='Optional SECOND ControlNet branch. Automatic depth reads image on CPU; external reads depth_image. Source depth may conflict with edited poses in edit_pose. Disabled by default.'),
+                io.Float.Input('depth_strength', default=.25, min=0, max=2, step=.05, optional=True),
+                io.Image.Input('depth_image', optional=True, tooltip='Relative depth RGB/grayscale hint when depth_model=external. White is near. Must align with the target scene/pose.'),
             ],
             outputs=[io.String.Output("director_prompt"), io.Image.Output("pose_control"),
                      io.Image.Output("pose_preview"), io.String.Output("camera_info"),
                      io.String.Output("pose_text"), io.String.Output("director_state"),
                      io.Model.Output('controlled_model'), io.Image.Output('control_image'),
                      io.Image.Output('reference_image_1'), io.Image.Output('reference_image_2'),
-                     io.Image.Output('reference_image_3'), io.Image.Output('angle_preview')],
+                     io.Image.Output('reference_image_3'), io.Image.Output('angle_preview'),
+                     io.String.Output('reference_description'), io.Image.Output('depth_preview')],
         )
 
     @classmethod
@@ -66,13 +77,21 @@ class QwenImage21Director(io.ComfyNode):
                 controlnet_name='disabled', control_strength=0.75, control_start=0, control_end=1,
                 model=None, vae=None, pose_image_reference=True, reference_opacity=0,
                 task_mode='director', identity_image=None, identity_scope='identity_only',
-                anyangle_lora='disabled', anyangle_strength=1, angle_guide='external', angle_reference=None):
+                anyangle_lora='disabled', anyangle_strength=1, angle_guide='external', angle_reference=None,
+                control_backend='auto', auto_describe=False, clip=None,
+                depth_model='disabled', depth_strength=.25, depth_image=None):
         controlnet_name = controlnet_name or 'disabled'
         if controlnet_name != 'disabled':
             from .controlnet.integration import validate_settings
             validate_settings(control_strength, control_start, control_end)
         use_control = controlnet_name != 'disabled' and control_strength > 0
-        if use_control and (model is None or vae is None):
+        use_depth = depth_model not in (None,'disabled') and depth_strength > 0
+        if use_depth:
+            from .controlnet.integration import validate_settings
+            validate_settings(depth_strength,control_start,control_end)
+            if controlnet_name == 'disabled':
+                raise ValueError('JR Director: select a Fun Union ControlNet to enable depth.')
+        if (use_control or use_depth) and (model is None or vae is None):
             raise ValueError('JR Director: connect MODEL and Qwen Image 2.1 VAE to enable ControlNet.')
         state = parse_state(director_state)
         state["render"].update(width=width, height=height)
@@ -100,15 +119,37 @@ class QwenImage21Director(io.ComfyNode):
         prompt, info, pose = build_prompt(state, subject_type, background_mode, framing,
                                          controlnet=controlnet_name != 'disabled' and not pose_image_reference,
                                          task_mode=task_mode, identity_scope=identity_scope or 'identity_only')
+        description = ''
+        if task_mode == 'replace_person' and auto_describe:
+            from .director.describe import describe_references
+            description = describe_references(clip, references[0], references[1], identity_scope or 'identity_only')
+            description_roles = ('Replacement identity and outfit from <image1>, retained scene from <image2>'
+                                 if identity_scope == 'full_appearance' else
+                                 'Replacement identity from <image1> and retained outfit/scene from <image2>')
+            prompt = description_roles + ', automatically described:\n' + description + '\n\n' + prompt
         prompt = "\n\n".join(p for p in [prompt_prefix.strip(), prompt, prompt_suffix.strip()] if p)
+        selected_backend = 'disabled'
         if use_control:
-            from .controlnet.loader import load_controlnet
-            from .controlnet.integration import apply_control
-            model = apply_control(model, load_controlnet(controlnet_name), vae, control_image,
-                                  control_strength, control_start, control_end)
+            from .controlnet.backends import apply_backend
+            model, selected_backend = apply_backend(model, controlnet_name, vae, control_image,
+                control_strength, control_start, control_end, control_backend or 'auto')
+        depth_preview = None
+        if use_depth:
+            from .director.conditioning import fit_reference
+            from .controlnet.backends import apply_backend
+            if depth_model != 'external':
+                from .director.depth import estimate_depth
+                depth_image = estimate_depth(image,depth_model)
+            if depth_image is None:
+                raise ValueError('JR Director: connect depth_image for external depth.')
+            depth_preview = fit_reference(depth_image,pixels)
+            model, selected_backend = apply_backend(model,controlnet_name,vae,depth_preview,
+                depth_strength,control_start,control_end,control_backend or 'auto')
         info = json.loads(info)
+        info['control_backend'] = selected_backend
+        info['depth_model'] = depth_model if use_depth else 'disabled'
         if task_mode == 'any_angle':
             info.update(angle_guide=angle_guide, anyangle_lora=anyangle_lora,
                         anyangle_strength=anyangle_strength, image_order=['coarse_target_view', 'original'])
         return io.NodeOutput(prompt, pixels, pixels.clone(), json.dumps(info, indent=2), pose,
-                             json.dumps(state, separators=(",", ":")), model, control_image, *references, angle_preview)
+                             json.dumps(state, separators=(",", ":")), model, control_image, *references, angle_preview, description, depth_preview)

@@ -77,7 +77,9 @@
       "clip": [
         "3",
         0
-      ]
+      ],
+      "depth_model": "depth_anything_v2_vitl_fp16.safetensors",
+      "depth_strength": 0.25
     }
   },
   "7": {
@@ -154,7 +156,7 @@
         "9",
         0
       ],
-      "filename_prefix": "JR_Director_replace_person"
+      "filename_prefix": "JR_Director_replace_person_depth"
     }
   },
   "12": {

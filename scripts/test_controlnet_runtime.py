@@ -8,6 +8,7 @@ from pathlib import Path
 import unittest
 from types import SimpleNamespace
 import copy
+from unittest.mock import patch
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--comfy-root', required=True)
@@ -31,6 +32,18 @@ from director.conditioning import reference_overlay, scenario_references
 
 
 class ControlTests(unittest.TestCase):
+    def test_control_backend_selection_and_old_core_fallback(self):
+        from controlnet.backends import resolve_backend
+        name='model_patches/union.safetensors'
+        with patch('controlnet.backends.native_available',return_value=True):
+            self.assertEqual(resolve_backend('auto',name),'native')
+            self.assertEqual(resolve_backend('bundled',name),'bundled')
+            self.assertEqual(resolve_backend('auto','controlnet/union.safetensors'),'bundled')
+            with self.assertRaises(ValueError):resolve_backend('native','controlnet/union.safetensors')
+        with patch('controlnet.backends.native_available',return_value=False):
+            self.assertEqual(resolve_backend('auto',name),'bundled')
+            with self.assertRaises(ValueError):resolve_backend('native',name)
+
     def test_anyangle_reference_order_and_missing_guide(self):
         pose=torch.zeros(1,32,64,3)
         source=torch.ones(1,64,64,3)
@@ -109,9 +122,21 @@ class ControlTests(unittest.TestCase):
         hooks=result.model_options['transformer_options']['patches_replace']['dit']
         self.assertEqual(list(hooks),[('single_block',i) for i in range(0,32,2)])
         result.patch_model(load_weights=False)
-        self.assertIs(diffusion._forward.__func__,_forward)
+        expected = _forward if 'diffusion_model._forward' in result.object_patches else original
+        self.assertIs(diffusion._forward.__func__,expected)
         result.unpatch_model(unpatch_weights=False)
         self.assertIs(diffusion._forward.__func__,original)
+
+        # A pre-merge signature still gets the local shim, which is then restored.
+        from types import MethodType
+        def legacy_forward(self, *args, **kwargs):
+            raise AssertionError('This test does not execute diffusion')
+        diffusion._forward = MethodType(legacy_forward, diffusion)
+        old_result=apply_control(base,control,vae,torch.zeros(1,32,32,3),.75,.1,.9)
+        old_result.patch_model(load_weights=False)
+        self.assertIs(diffusion._forward.__func__,_forward)
+        old_result.unpatch_model(unpatch_weights=False)
+        self.assertIs(diffusion._forward.__func__,legacy_forward)
 
     def test_inactive_patch_preserves_previous_and_exception_cleans_stream(self):
         patch=QwenImage21FunControlPatch(None,None,None,1,sigma_range=(.8,.2))

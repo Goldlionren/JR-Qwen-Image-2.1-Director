@@ -41,6 +41,18 @@ The model card declares Apache-2.0. The tested revision is
 The short camera-edit instruction and reference image order follow the author's model card.
 The experimental shaded rig renderer is JR code, not the author's image-to-3D workflow.
 
+## Depth Anything V2 / DINOv2
+
+`director/vendor/depth_anything_v2` contains the 12 inference Python files from
+[Depth-Anything-V2](https://github.com/DepthAnything/Depth-Anything-V2), revision
+`a561b849ebae10a6f5ef49e26c83cbbcd36c71bf`, under Apache-2.0.
+Original DINOv2/Meta copyright notices are retained in the source files.
+The license is included in [licenses/Depth-Anything-V2-APACHE-2.0.txt](licenses/Depth-Anything-V2-APACHE-2.0.txt).
+JR change: `dpt.py` selects the model's current device instead of automatically using CUDA.
+The wrapper runs optional depth inference on CPU and restores the caller's thread count.
+No weights are bundled. Upstream declares Small weights Apache-2.0 and Base/Large/Giant
+weights CC-BY-NC-4.0; this machine's pre-existing Large checkpoint is used for optional depth tests.
+
 ## Vue
 
 The MIT License (MIT)

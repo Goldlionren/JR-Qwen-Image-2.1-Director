@@ -1,1 +1,2 @@
-# Uses only numpy, Pillow and torch already provided by ComfyUI.
+# Manual editing uses numpy, Pillow and torch already provided by ComfyUI.
+# Optional depth also uses Core's torchvision/safetensors and OpenCV (requirements-pose.txt).

@@ -5,6 +5,19 @@
 
 ## 先规划，再执行
 
+v0.6.0 可使用自动识图，无需逐张编写 B 身份和 A 服装描述：
+
+```powershell
+python scripts/batch_replace_dataset.py --source-dir 'D:/datasets/person_A' --identity-image 'D:/references/person_B.png' --auto-describe --reference-opacity 0.05 --output-dir 'D:/datasets/person_B_candidates'
+```
+
+确认输入输出目录后，同一命令加 `--run --pose-models 'D:/Comfy-Desktop/ComfyUI-Shared/models/DreamID-V/pose/models' --limit 5`。
+本地 Qwen3-VL 自动读取 B 的脸/发型/眼镜/体型，以及每张 A 的衣物/动作/场景，CFG 3；生成的描述保存在执行 history 的文本预览输出中。
+模型可能漏读或误读属性，仍应核对。默认提示词不绑定性别、衣服颜色或具体场景，自动描述随图变化。
+`--auto-describe` 记入运行配置，切换该选项须使用新输出目录；旧的手写描述清单保持可恢复。
+
+下方为仍保留的手动描述方式：
+
 使用 ComfyUI 的 Python 环境。在项目根目录运行，替换下列路径和 B 描述：
 
 ```powershell
@@ -32,7 +45,7 @@ B 的简短描述建议使用模型能清楚理解的文字；身份图片仍是
 python scripts/batch_replace_dataset.py --source-dir 'D:/datasets/person_A' --identity-image 'D:/references/person_B.png' --identity-description 'B 的脸部、发型和体型特征；不要写 B 的服装' --output-dir 'D:/datasets/person_B_candidates' --run --pose-models 'D:/Comfy-Desktop/ComfyUI-Shared/models/DreamID-V/pose/models' --limit 5
 ```
 
-- 默认 `identity_only`、512 长边、ControlNet 强度 0.25、区间 0–0.6、原图淡叠加 **0**。`--reference-opacity 0.05` 可另建一次实验；不能保证更好。
+- 默认 `identity_only`、512 长边、ControlNet 强度 0.25、区间 0–0.6、原图淡叠加 **0**。自动描述方式使用 CFG 3，手写方式保留 CFG 1；`--reference-opacity 0.05` 可另建一次实验，不能保证更好。后端自动优先使用已合并的官方实现。
 - `--identity-scope full_appearance` 才使用 B 的整套服装。`--resolution` 可改，但更大尺寸的批量性能尚未验证。
 - 去掉 `--limit` 处理清单中剩余可执行图片。清单固定于首次扫描；新增 A 图片或改变 B / 配置应使用新输出目录。
 - 同一个输出目录有进程锁，避免重复启动并发批处理。
@@ -61,7 +74,7 @@ pending/<id>.json       # 来源和身份参考哈希、范围、种子、拟合
 - 单张图恰好检测到一人时自动拟合。零人、多人、关节不足或拟合误差超过长边 5% 转为 `needs_review`，跳过生成；先人工裁切、选人或用导演台处理。
 - 仅用一张 B 身份参考；多角度身份参考选择、自动人脸相似度打分、自动 caption、批准/淘汰界面尚未实现。
 - 生成后的 `review_status=pending` 始终表示尚未批准，不能因为模型成功执行就直接投入 LoRA 训练。
-- 本机自动流程实测已完成一张输入到清单/输出的全链路，但仅用 B 描述的样本误复制了 B 的衣服并丢失举手，被人工判为不合格。单张示例中明确写出 A 服装和动作后效果更好；**尚不能称为无人审核的批量数据集生产线**。
+- v0.4.0 仅用 B 描述的样本曾误复制 B 的衣服并丢失举手，被人工判为不合格。v0.6.0 的自动身份/服装描述已改善示例中的换人和衣服来源问题，详见 [当前组合验证](SCENARIO_TUNING.md)；**仍是需审核的候选生成流程**。
 - 人工检查：是否是 B；是否仍是 A 的服装；动作/视角是否正确；体型是否混入 A；手指和遮挡是否合理；是否混入错误脸或重复人物。
 - 同一张 B 参考反复扩增可能重复模型偏差；少量真实/原始 B 素材应保留用于对照，不把所有合成结果视作等价真值。
 

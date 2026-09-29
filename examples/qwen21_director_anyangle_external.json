@@ -421,6 +421,16 @@
           "name": "angle_reference",
           "type": "IMAGE",
           "link": 32
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": null
+        },
+        {
+          "name": "depth_image",
+          "type": "IMAGE",
+          "link": null
         }
       ],
       "outputs": [
@@ -493,6 +503,16 @@
           "links": [
             23
           ]
+        },
+        {
+          "name": "reference_description",
+          "type": "STRING",
+          "links": []
+        },
+        {
+          "name": "depth_preview",
+          "type": "IMAGE",
+          "links": []
         }
       ],
       "properties": {
@@ -517,7 +537,11 @@
         "identity_only",
         "QI2.1_AnyAngle.safetensors",
         1.0,
-        "external"
+        "external",
+        "auto",
+        false,
+        "disabled",
+        0.25
       ]
     },
     {

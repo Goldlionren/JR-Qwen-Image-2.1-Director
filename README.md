@@ -11,8 +11,10 @@
 - 站立、T-Pose、A-Pose、举手、行走、坐姿、不对称姿态预设；撤销/重做和 JSON 导入/导出。
 - 完整状态保存在 workflow 的 `director_state` 字符串输入中。Python 独立重算投影，API 执行无需浏览器。
 - **从图片导入姿态**：接入 IMAGE，DWPose 检测人物，选择人物后拟合为固定骨长的可编辑骨架；支持撤销和保存。
-- **内置 Fun Union ControlNet**：项目内回移植 Qwen Image 2.1 控制分支，支持 INT8 convrot / BF16；无需安装上游 PR 或修改 ComfyUI Core。
+- **Fun Union ControlNet**：`control_backend=auto` 优先使用已合并的官方实现，旧 Core 回退到项目内兼容版本；可手动选择 `native` / `bundled` 做同参数对照，支持 INT8 convrot / BF16。
 - **两种场景模式**：同人物同场景改动作（`edit_pose`），或把身份图人物放入目标场景/姿态（`replace_person`）。
+- **自动身份/服装描述**：场景 2 可复用已加载的 Qwen3-VL，从 B 提取身份、从 A 提取服装与场景，避免逐图手写提示词；描述有独立输出供检查。
+- **可选深度分支**：自动 Depth Anything V2（CPU）或外部深度图，与骨架分别通过 Fun Union 控制；默认关闭，不把原图深度强加给修改后的动作。
 - **AnyAngle 换机位（实验性）**：节点内加载作者 LoRA，接外部 3D 粗渲染图，或用导演台生成灰色实体人偶作为实验引导。支持与内置 ControlNet 叠加；当前人偶测试尚未实现准确换机位，见 [接入与实测](docs/ANYANGLE.md)。
 - 提示词按任务模式区分身份参考、完整场景参考与目标姿态；无旧 LoRA 触发词。
 
@@ -21,7 +23,7 @@
 将 [GitHub 仓库](https://github.com/Goldlionren/JR-Qwen-Image-2.1-Director) 克隆到 `ComfyUI/custom_nodes/JR-Qwen-Image-2.1-Director`，然后重启 ComfyUI，刷新浏览器。
 发行目录已经包含 `web/dist`，使用者无需 Node.js。手动编辑无需额外 Python 包；图片识别的可选依赖与模型见下节。
 
-测试基线：ComfyUI **0.37.0**（`8d534945`）、frontend **1.53.6**、Python **3.13.12**、PyTorch **2.12.1+cu130**，支持 Vue nodes。
+当前测试基线：ComfyUI **0.37.0**（`a7169322`，含官方 Fun Union）、frontend **1.53.6**、Python **3.13.12**、PyTorch **2.12.1+cu130**，支持 Vue nodes。
 使用 ComfyUI V3 API。更旧版本尚未验证。本项目没有修改 Core。
 
 菜单：`image → director → JR Qwen Image 2.1 Director`。
@@ -109,14 +111,14 @@ Qwen 的身份参考仍需直接接 `image_1`；姿态来源图和身份参考�
 
 - [场景 1 工作流](examples/qwen21_director_edit_pose.json)：点击「从图片导入姿态」，修改关节后 Run。示例已导入教室人物，并只修改右臂为举手。
 - [场景 2 工作流](examples/qwen21_director_replace_person.json)：身份图与场景图分开加载。姿态从 `image`（场景图）导入；5%–10% 叠加如开启，也取这张场景图。
-- 两个示例默认使用通用提示词，`prompt_prefix` / `prompt_suffix` 留空；身份、服装和场景直接引用 `<image1>` / `<image2>`，动作以最终骨架为准。换素材后重新导入姿态即可开始测试，无需先写人物、衣服颜色或动作描述。本机通用提示词测试中，场景 1 动作修改有效，场景 2 仍未替换身份；后者需要继续验证，必要时可用前后缀补充约束，详见 [验证记录](docs/SCENARIOS.md)。
+- 两个示例的 `prompt_prefix` / `prompt_suffix` 留空，图像引用统一为 `<image1>` / `<image2>`。场景 1 使用 CFG 1；场景 2 使用 CFG 3，并启用 `auto_describe`，自动读取当前 B 的身份特征和 A 的服装/场景描述，无固定素材词。原先纯通用短语的不换人问题已有改善；候选仍须检查体型、身份与衣物细节，见 [官方后端与组合验证](docs/SCENARIO_TUNING.md)。
 - [配套素材](examples/scenarios) 中的两张 PNG 放入 ComfyUI/input；原有 `examples/reference.png` 放入 input 并命名 `qwen21_director_reference_20260928.png`。本机已安装素材。
 - 示例把 reference_image 输出接到 Qwen 编码器的相应图像槽，`resolution=0`。这样编码器依据已统一的画布决定输出尺寸，避免身份照的比例改变目标场景。
 - 保持来源图的比例，优先先导入姿态再编辑关节。这两种模式保留源场景视点；`background_mode` 和 `framing` 的提示词覆盖仅在原 `director` 模式生效。
 - `pose_image_reference` 指编码器是否额外接入骨架：edit_pose 的 image_2，或 replace_person 的 image_3；关闭时骨架仅经过 ControlNet，完整场景图仍须保留。
 
 这是生成式场景编辑，不是背景像素锁定或带遮罩的局部合成；多人选择只决定导入哪具骨架，不能保证模型只替换该人物。
-实际通过和失败的测试、默认配置依据见 [两种场景验证](docs/SCENARIOS.md)。
+当前 23 张组合对比、批量验证和默认配置依据见 [场景调优](docs/SCENARIO_TUNING.md)；早期记录见 [v0.4 场景验证](docs/SCENARIOS.md)。
 
 ### A 数据集 → B 身份 LoRA 候选集
 

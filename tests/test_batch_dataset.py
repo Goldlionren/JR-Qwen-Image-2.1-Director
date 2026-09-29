@@ -10,6 +10,19 @@ from director.state import default_state
 
 
 class BatchDatasetTests(unittest.TestCase):
+    def test_automatic_descriptions_are_opt_in_and_recorded(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);source=root/'A';source.mkdir();identity=root/'B.png'
+            Image.new('RGB',(64,64),'red').save(identity)
+            Image.new('RGB',(64,64),'blue').save(source/'a.png')
+            with self.assertRaises(ValueError):plan(source,identity,root/'manual','')
+            manifest=plan(source,identity,root/'auto','',auto_describe=True)
+            self.assertTrue(manifest['config']['auto_describe'])
+            graph=graph_for(manifest['jobs'][0],manifest['config'],'B.png','A.png',default_state(),'run')
+            self.assertEqual(graph['6']['inputs']['prompt_prefix'],'')
+            self.assertEqual(graph['6']['inputs']['clip'],['3',0])
+            self.assertEqual(graph['8']['inputs']['cfg'],3)
+
     def test_queued_resume_downloads_existing_result_without_submitting_again(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);source=root/'A';source.mkdir();identity=root/'B.png';out=root/'out'

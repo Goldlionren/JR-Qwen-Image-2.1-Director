@@ -56,7 +56,7 @@ app.registerExtension({
           if(taskMode&&!taskMode.value)taskMode.value='director';
           const identityScope=this.widgets.find((w:any)=>w.name==='identity_scope');
           if(identityScope&&!identityScope.value)identityScope.value='identity_only';
-          for(const [name,value] of [['anyangle_lora','disabled'],['anyangle_strength',1],['angle_guide','external']]) {
+          for(const [name,value] of [['anyangle_lora','disabled'],['anyangle_strength',1],['angle_guide','external'],['control_backend','auto'],['auto_describe',false],['depth_model','disabled'],['depth_strength',.25]]) {
             const widget=this.widgets.find((w:any)=>w.name===name);
             if(widget&&widget.value==null)widget.value=value;
           }

@@ -66,7 +66,9 @@
       "control_end": 0.6,
       "pose_image_reference": true,
       "reference_opacity": 0.0,
-      "task_mode": "edit_pose"
+      "task_mode": "edit_pose",
+      "control_backend": "auto",
+      "auto_describe": false
     }
   },
   "7": {
@@ -117,7 +119,7 @@
       ],
       "seed": 21003,
       "steps": 25,
-      "cfg": 1.0,
+      "cfg": 1,
       "sampler_name": "euler",
       "scheduler": "simple",
       "denoise": 1.0

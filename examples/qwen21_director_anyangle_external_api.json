@@ -67,6 +67,8 @@
       "pose_image_reference": false,
       "reference_opacity": 0,
       "task_mode": "any_angle",
+      "control_backend": "auto",
+      "auto_describe": false,
       "anyangle_lora": "QI2.1_AnyAngle.safetensors",
       "anyangle_strength": 1,
       "angle_guide": "external",

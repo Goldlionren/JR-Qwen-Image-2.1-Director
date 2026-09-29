@@ -26385,7 +26385,7 @@ al.registerExtension({
           _ && !_.value && (_.value = "director");
           const v = this.widgets.find((d) => d.name === "identity_scope");
           v && !v.value && (v.value = "identity_only");
-          for (const [d, T] of [["anyangle_lora", "disabled"], ["anyangle_strength", 1], ["angle_guide", "external"]]) {
+          for (const [d, T] of [["anyangle_lora", "disabled"], ["anyangle_strength", 1], ["angle_guide", "external"], ["control_backend", "auto"], ["auto_describe", !1], ["depth_model", "disabled"], ["depth_strength", 0.25]]) {
             const E = this.widgets.find((M) => M.name === d);
             E && E.value == null && (E.value = T);
           }
