@@ -15,7 +15,7 @@ JR modifications (2026-09-28): project-local control classes, instance-scoped
 ModelPatcher compatibility method, strict 2.1 checkpoint validation, a bounded
 loader cache, and integration into the Director node. No Core files are replaced.
 
-The combined v0.3.0 distribution is GPL-3.0-or-later. Original Director components
+The combined distribution is GPL-3.0-or-later. Original Director components
 retain their MIT permissions and notice in [licenses/Director-MIT.txt](licenses/Director-MIT.txt).
 Third-party components retain their respective licenses. Model weights are not
 bundled; Qwen Research License applies to the Fun Union weights separately.
@@ -51,7 +51,7 @@ The license is included in [licenses/Depth-Anything-V2-APACHE-2.0.txt](licenses/
 JR change: `dpt.py` selects the model's current device instead of automatically using CUDA.
 The wrapper runs optional depth inference on CPU and restores the caller's thread count.
 No weights are bundled. Upstream declares Small weights Apache-2.0 and Base/Large/Giant
-weights CC-BY-NC-4.0; this machine's pre-existing Large checkpoint is used for optional depth tests.
+weights CC-BY-NC-4.0. Consult the model publisher for the license applicable to your chosen weights.
 
 ## Vue
 

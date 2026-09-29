@@ -23,6 +23,7 @@ for col, (suffix, label) in enumerate([('000', 'Original 0%'), ('005', 'Original
             sheet.paste(im, (col * 320 + 4, 72 + row * 320))
 draw.text((12, 711), 'Top: actual ControlNet hint. Bottom: generated image. Qwen image_2 stays pure pose.',
           font=ImageFont.truetype(str(font_path), 15) if font_path.exists() else font, fill='#b7c4d4')
-destination = root / 'docs/pose-overlay-comparison.png'
+destination = root / '_private/reports/pose-overlay-comparison.png'
+destination.parent.mkdir(parents=True, exist_ok=True)
 sheet.save(destination)
 print(destination)

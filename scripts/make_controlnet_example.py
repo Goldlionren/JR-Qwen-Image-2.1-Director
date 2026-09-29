@@ -51,7 +51,7 @@ note=('JR Qwen Image 2.1 Director · ControlNet Example\n\n'
       '5. 点击 Run，右侧保存最终生成图。默认 512 × 512、25 步、CFG 1。\n\n'
       'ControlNet 已内置在导演台，controlled_model 已接入采样器。\n'
       '身份图 → image_1；pose_control → image_2，同时用于内部 ControlNet。\n'
-      'pose_image_reference 保持开启。无需额外安装 ControlNet 节点或上游 PR。\n'
+      'pose_image_reference 保持开启，生成模型使用 controlled_model 输出。\n'
       '新机器请先安装 README 中列出的基础模型、编码器、VAE 和 INT8 控制权重。')
 workflow['nodes'].append({'id':23,'type':'Note','pos':[-1400,600],'size':[780,345],
     'flags':{},'order':11,'mode':0,'inputs':[],'outputs':[],

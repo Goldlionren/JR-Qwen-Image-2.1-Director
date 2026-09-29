@@ -21,5 +21,7 @@ for index,(title,path) in enumerate(panels):
     with Image.open(path) as im:
         im=im.convert('RGB');im.thumbnail((312,312),Image.Resampling.LANCZOS)
         sheet.paste(im,(x+(320-im.width)//2,y+44+(312-im.height)//2))
-sheet.save(root/'docs/scenario-comparison.png')
-print(root/'docs/scenario-comparison.png')
+destination=root/'_private/reports/scenario-comparison.png'
+destination.parent.mkdir(parents=True,exist_ok=True)
+sheet.save(destination)
+print(destination)

@@ -62,7 +62,7 @@ for mode in ('edit_pose','replace_person'):
         workflow['links'].append([next_link,21,12,25,0,'STRING']);next_link+=1
         workflow['last_node_id']=25
     note=('JR Qwen Image 2.1 Director · '+('场景 2：人物替换' if replace else '场景 1：同人物同场景改动作')+'\n\n'
-          '示例素材见仓库 examples/scenarios；本机已安装，可直接 Run。\n'
+          '首次使用请在 Load Image 上传图片并选择已安装的模型；演示素材见 examples/scenarios。\n'
           '换图后请点击导演台「从图片导入姿态」，选择目标人物，再编辑骨架。\n'
           '导入会读取 image（场景图），不会读取 identity_image。\n\n')
     note+=('通用提示词由 Director 按模式自动生成；默认无需填写 prompt_prefix / prompt_suffix。\n'
@@ -76,7 +76,7 @@ for mode in ('edit_pose','replace_person'):
                '编码器 image_1 / 2 已接身份 / 完整场景；骨架由内部 ControlNet 控制。\n'
                '如自行添加骨架到 image_3，再开启 pose_image_reference。\n'
                'reference_opacity=0.05：将场景图淡叠到内部 ControlNet 骨架。可比较 0 / 0.05 / 0.10。\n'
-               '当前示例针对单人场景；多人先裁切或准备人物遮罩以减少误替换。\n')
+               '当前示例针对单人场景；多人建议先裁切目标人物，人物选择只影响导入的骨架。\n')
     else:
         note+=('source image 同时提供身份和场景。\n'
                '默认姿态已从示例照片导入，只修改右臂为举手。\n'
@@ -88,7 +88,7 @@ for mode in ('edit_pose','replace_person'):
            '这两种模式保留原场景视点；background_mode / framing 仅用于 director 模式。\n'
            'control_image 可预览骨架控制图。可选 depth_model 启用自动深度或 external 外部深度，depth_preview 输出实际深度。\n'
            '深度默认关闭；改动作时，原图深度可能与新骨架冲突。')
-    byid[23]['widgets_values']=[note+'\ncontrol_backend=auto：新 Core 优先使用官方实现，旧 Core 自动回退。'];byid[23]['size']=[780,650]
+    byid[23]['widgets_values']=[note+'\ncontrol_backend 保持 auto 即可。'];byid[23]['size']=[780,650]
     workflow['groups'][0]['bounding']=[-1460,-480,920,1630]
     workflow['groups'][1]['bounding']=[-525,-480,850,1380]
     workflow['last_link_id']=next_link-1

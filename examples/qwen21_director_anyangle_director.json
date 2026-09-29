@@ -590,7 +590,7 @@
       "title": "JR · 使用说明",
       "properties": {},
       "widgets_values": [
-        "JR Qwen Image 2.1 Director · AnyAngle 换机位\n\ntask_mode=any_angle；LoRA=QI2.1_AnyAngle.safetensors；强度 1。\n采样器 CFG=3，25 步。ControlNet 默认关闭；可选启用强度 0.25、区间 0–0.6 做对比。\n编码器顺序与其他模式不同：<image1> 是目标机位粗图，<image2> 是原图。已正确接线。\n通用提示词：Change the camera angle from <image2> to <image1>.\n\nangle_guide=director_proxy：实验性灰色实体人偶，跟随导演台相机和关节。\n示例方位 60°、俯视 15°。可直接调整相机后 Run；原图接 image。\n灰色人偶没有原图的头发、服装、体型和场景结构，不等于完整 3D 粗模，角度/背景效果需筛选。\n\nAnyAngle 用于同人物换机位，不是身份替换模型，也不自动重建 3D 场景。\nexamples/reference.png → input/qwen21_director_reference_20260928.png。\nexamples/scenarios/jr_anyangle_coarse60.png → input/ 同名文件（外部入口演示）。\n将作者 QI2.1_AnyAngle.safetensors 放入 models/loras，本机已安装。\n作者：https://huggingface.co/lilylilith/QI_2.1_AnyAngle"
+        "JR Qwen Image 2.1 Director · AnyAngle 换机位\n\ntask_mode=any_angle；LoRA=QI2.1_AnyAngle.safetensors；强度 1。\n采样器 CFG=3，25 步。ControlNet 默认关闭；可选启用强度 0.25、区间 0–0.6 做对比。\n编码器顺序与其他模式不同：<image1> 是目标机位粗图，<image2> 是原图。已正确接线。\n通用提示词：Change the camera angle from <image2> to <image1>.\n\nangle_guide=director_proxy：实验性灰色实体人偶，跟随导演台相机和关节。\n示例方位 60°、俯视 15°。可直接调整相机后 Run；原图接 image。\n灰色人偶没有原图的头发、服装、体型和场景结构，不等于完整 3D 粗模，角度/背景效果需筛选。\n\nAnyAngle 用于同人物换机位，不是身份替换模型，也不自动重建 3D 场景。\nexamples/reference.png → input/qwen21_director_reference_20260928.png。\nexamples/scenarios/jr_anyangle_coarse60.png → input/ 同名文件（外部入口演示）。\n将作者 QI2.1_AnyAngle.safetensors 放入 models/loras，刷新后选择该模型。\n作者：https://huggingface.co/lilylilith/QI_2.1_AnyAngle"
       ],
       "color": "#234",
       "bgcolor": "#345"

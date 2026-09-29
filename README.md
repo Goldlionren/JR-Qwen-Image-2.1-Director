@@ -1,249 +1,135 @@
 # JR Qwen Image 2.1 Director
 
-在一个 ComfyUI 节点里摆人物、转摄影机、检查最终投影，并输出 Qwen 2.1 指令和姿态参考图。
+在 ComfyUI 中从参考图导入人物姿态，编辑动作与摄影机，再用 Qwen Image 2.1 生成图片。适合制作同一人物的不同动作图片，或为人物 LoRA 准备待筛选的图像素材。
 
-## Features / 功能
+## 安装
 
-- **CAMERA**：连续方位角、俯仰、距离、FOV、roll、注视点；八方向、高度、景别预设。
-- **ACTOR**：独立的位移、yaw / pitch / roll、统一缩放。
-- **POSE**：22 个层级关节（17 个主体关节 + 5 个头部标记）；局部 FK 旋转、手腕/脚踝双骨 IK。
-- Three.js 编辑舞台、摄影机视图和实时黑底 OpenPose 风格投影。
-- 站立、T-Pose、A-Pose、举手、行走、坐姿、不对称姿态预设；撤销/重做和 JSON 导入/导出。
-- 完整状态保存在 workflow 的 `director_state` 字符串输入中。Python 独立重算投影，API 执行无需浏览器。
-- **从图片导入姿态**：接入 IMAGE，DWPose 检测人物，选择人物后拟合为固定骨长的可编辑骨架；支持撤销和保存。
-- **Fun Union ControlNet**：`control_backend=auto` 优先使用已合并的官方实现，旧 Core 回退到项目内兼容版本；可手动选择 `native` / `bundled` 做同参数对照，支持 INT8 convrot / BF16。
-- **两种场景模式**：同人物同场景改动作（`edit_pose`），或把身份图人物放入目标场景/姿态（`replace_person`）。
-- **自动身份/服装描述**：场景 2 可复用已加载的 Qwen3-VL，从 B 提取身份、从 A 提取服装与场景，避免逐图手写提示词；描述有独立输出供检查。
-- **可选深度分支**：自动 Depth Anything V2（CPU）或外部深度图，与骨架分别通过 Fun Union 控制；默认关闭，不把原图深度强加给修改后的动作。
-- **AnyAngle 换机位（实验性）**：节点内加载作者 LoRA，接外部 3D 粗渲染图，或用导演台生成灰色实体人偶作为实验引导。支持与内置 ControlNet 叠加；当前人偶测试尚未实现准确换机位，见 [接入与实测](docs/ANYANGLE.md)。
-- 提示词按任务模式区分身份参考、完整场景参考与目标姿态；无旧 LoRA 触发词。
+1. 使用支持 Qwen Image 2.1 的 ComfyUI。需要节点 `TextEncodeQwenImage21`；加载工作流出现缺失的基础节点时，先更新 ComfyUI。
+2. 在 `ComfyUI/custom_nodes` 下运行：
 
-## Installation / 安装
+   ```shell
+   git clone https://github.com/Goldlionren/JR-Qwen-Image-2.1-Director.git
+   ```
 
-将 [GitHub 仓库](https://github.com/Goldlionren/JR-Qwen-Image-2.1-Director) 克隆到 `ComfyUI/custom_nodes/JR-Qwen-Image-2.1-Director`，然后重启 ComfyUI，刷新浏览器。
-发行目录已经包含 `web/dist`，使用者无需 Node.js。手动编辑无需额外 Python 包；图片识别的可选依赖与模型见下节。
+3. 重启 ComfyUI，刷新页面。在节点菜单 `image → director` 中找到 **JR Qwen Image 2.1 Director**。
 
-当前测试基线：ComfyUI **0.37.0**（`a7169322`，含官方 Fun Union）、frontend **1.53.6**、Python **3.13.12**、PyTorch **2.12.1+cu130**，支持 Vue nodes。
-使用 ComfyUI V3 API。更旧版本尚未验证。本项目没有修改 Core。
+仓库已包含界面文件，无需安装 Node.js 或自行构建。仅编辑骨架可先打开 [姿态编辑示例](examples/director_pose_only.json)，无需生成模型。
 
-菜单：`image → director → JR Qwen Image 2.1 Director`。
-内部节点 ID 保留为 `QwenImage21Director`，兼容更名前保存的工作流；项目与界面名称统一使用 JR 前缀。
-首次试用可打开 [`examples/director_pose_only.json`](examples/director_pose_only.json)，不加载模型即可运行。
+### 生成所需模型
 
-## Development Setup / 开发
+将模型放入 ComfyUI 对应目录，刷新模型列表，并在示例工作流中选择自己安装的文件。模型权重需另外下载。
 
-```powershell
-npm ci
-npm run build
-npm test
-python -m unittest discover -s tests -v
-```
-
-`python` 应使用现有 ComfyUI venv 的解释器（需要 numpy、Pillow）。
-Node 20.12 已实测可构建；Vite 6 用于兼容现有环境。
-
-```powershell
-# 独立 UI 开发预览，默认只监听本机
-npm run dev
-
-# Windows 开发安装：创建 junction，不覆盖已有节点目录
-.\scripts\deploy_dev.ps1 -ComfyRoot '你的 ComfyUI 目录'
-```
-
-修改前端后重新 build 并刷新页面；修改 Python 后重启 ComfyUI。
-本机使用计划任务 `ComfyUI 3060 Production` 管理启停。操作前检查 `/queue` 空闲，使用既有计划任务重启。
-
-## Camera Controls / 摄影机
-
-Camera 模式：左键拖动 orbit，滚轮 dolly，Shift + 左键拖动 target。
-右键旋转编辑观察视角，中键平移观察视角；观察视角不会改变 Director Camera。
-`Camera view` 切换到真正的输出摄影机，并按输出宽高比显示画面。
-下方黑底预览始终使用 Director Camera，与右键观察角度无关。
-
-`Eye Level` 将摄影机放到当前头部高度；数值 Elevation 则是相对于轨道 target 的仰角，两者不是同一个概念。
-Full Body / Medium / Close 会调整 camera target、distance 和 FOV，跟随 actor 根位置及缩放。
-节点的 `framing` 为提示词覆盖项；要改变实际投影，请同时调整摄影机。
-
-## Actor Controls / 人物
-
-Actor 模式：左键拖动旋转人物 yaw；Shift + 左键拖动改变人物 X/Z 位置。
-面板可以精确设置 XYZ、yaw、pitch、roll、scale。它们不会改变摄影机或局部关节角度。
-
-## Pose Controls / 姿态
-
-在 Pose 模式选择关节，用旋转环或 XYZ 数字编辑局部旋转。
-直接拖动手腕/脚踝，双骨 IK 会计算肩/肘或髋/膝；目标超出可达范围时自动限制到骨链长度。
-右键换观察视角后可从另一个平面调整深度。骨长来自不可变 rest offsets，不会因为拖动无限拉长。
-预设只修改 pose，不改变 actor 或 camera。坐姿预设不会自动下移 actor；可在 Actor 面板调高度。
-末端 wrist/ankle 自身旋转在未实现手掌/脚掌时不影响主骨架投影；使用 IK 拖动改变其位置。
-
-## Outputs / 输出
-
-| 输出 | 类型 | 内容 |
+| 模型 | 放置目录 | 示例使用的文件 |
 |---|---|---|
-| `director_prompt` | STRING | Qwen 2.1 双参考图自然语言指令 |
-| `pose_control` | IMAGE | 黑底彩色 OpenPose 风格身体图，float32 `[1,H,W,3]` |
-| `pose_preview` | IMAGE | 当前与 pose_control 相同 |
-| `camera_info` | STRING | JSON：轨道角、相对角、实际相对视角、视线高度、景别 |
-| `pose_text` | STRING | 从骨架推导的基础姿态描述 |
-| `director_state` | STRING | version 1 完整 3D 状态，可重新导入 |
-| `controlled_model` | MODEL | 追加的第七个输出；ControlNet 开启时为施加姿态控制后的模型，关闭时透传输入模型 |
-| `control_image` | IMAGE | 第八个输出；实际送入内部 ControlNet 的控制图，含可选的淡原图叠加 |
-| `reference_image_1` | IMAGE | edit_pose 的原图，或 replace_person 的替换人物身份图；适配到 Director 画布 |
-| `reference_image_2` | IMAGE | edit_pose 的目标骨架，或 replace_person 的完整目标场景图 |
-| `reference_image_3` | IMAGE | 仅 replace_person：目标骨架 |
+| Qwen Image 2.1 | `models/diffusion_models` | `qwen_image_2.1_int8_convrot.safetensors` |
+| Qwen3-VL 8B 文本/图像编码器 | `models/text_encoders` | `qwen3vl_8b_int8_convrot.safetensors` |
+| Qwen Image 2.1 VAE | `models/vae` | `qwen_image_2.1_vae_bf16.safetensors` |
+| Qwen Image 2.1 Fun ControlNet Union | `models/model_patches` | `qwen_image_2.1_fun_controlnet_union_int8_convrot.safetensors` |
 
-尺寸支持 64–2048。`background_mode` 只影响生成指令，pose_control 固定黑底。
-可选 `image` 用于明确点击后的姿态导入，也可作为实验性原图叠加来源。普通运行只使用你已经编辑并保存的姿态，绝不会自动重识别并覆盖它。
-Qwen 的身份参考仍需直接接 `image_1`；姿态来源图和身份参考图可以是不同图片。
-以上直接接线适用于原 `director` 模式；另外两种模式使用下面的专用示例。
-`director` 模式不产生 reference_image_1/2/3；edit_pose 不产生 reference_image_3，不要连接这些空输出。
+可在 [QwenImage 模型目录](https://huggingface.co/Kijai/QwenImage_experimental/tree/main) 查找上述转换权重，或使用兼容的 Qwen Image 2.1 权重。ControlNet 必须使用 **2.1 Fun Union**，不要选旧版 Qwen ControlNet。各模型的授权以其发布页为准。
 
-## 两种实际场景 / v0.4.0
+### 从图片导入姿态
 
-| 模式 | Director 的 `image` | `identity_image` | 要保留的内容 |
-|---|---|---|---|
-| `edit_pose` | 同一个人所在的原场景 | 不需要 | 人物身份、服装、场景和相机，只编辑动作 |
-| `replace_person` | `<image2>`：目标场景与姿态 | `<image1>`：替换人物 | 使用 `<image1>` 的人物，保留 `<image2>` 的场景与目标姿态 |
+使用 **ComfyUI 的 Python 环境** 安装 [姿态检测依赖](requirements-pose.txt)：
 
-`identity_scope` 默认 **identity_only**：B 提供脸、发型和体型，保留 A / `<image2>` 每张图的服装与鞋子。
-`full_appearance` 才会连 B 的衣服一起带过去。它们是生成指令，不是精确身体重建或像素级换脸。
+```shell
+python -m pip install -r ComfyUI/custom_nodes/JR-Qwen-Image-2.1-Director/requirements-pose.txt
+```
 
-- [场景 1 工作流](examples/qwen21_director_edit_pose.json)：点击「从图片导入姿态」，修改关节后 Run。示例已导入教室人物，并只修改右臂为举手。
-- [场景 2 工作流](examples/qwen21_director_replace_person.json)：身份图与场景图分开加载。姿态从 `image`（场景图）导入；5%–10% 叠加如开启，也取这张场景图。
-- 两个示例的 `prompt_prefix` / `prompt_suffix` 留空，图像引用统一为 `<image1>` / `<image2>`。场景 1 使用 CFG 1；场景 2 使用 CFG 3，并启用 `auto_describe`，自动读取当前 B 的身份特征和 A 的服装/场景描述，无固定素材词。原先纯通用短语的不换人问题已有改善；候选仍须检查体型、身份与衣物细节，见 [官方后端与组合验证](docs/SCENARIO_TUNING.md)。
-- [配套素材](examples/scenarios) 中的两张 PNG 放入 ComfyUI/input；原有 `examples/reference.png` 放入 input 并命名 `qwen21_director_reference_20260928.png`。本机已安装素材。
-- 示例把 reference_image 输出接到 Qwen 编码器的相应图像槽，`resolution=0`。这样编码器依据已统一的画布决定输出尺寸，避免身份照的比例改变目标场景。
-- 保持来源图的比例，优先先导入姿态再编辑关节。这两种模式保留源场景视点；`background_mode` 和 `framing` 的提示词覆盖仅在原 `director` 模式生效。
-- `pose_image_reference` 指编码器是否额外接入骨架：edit_pose 的 image_2，或 replace_person 的 image_3；关闭时骨架仅经过 ControlNet，完整场景图仍须保留。
+请按实际安装位置调整路径。若环境已有可用的 `cv2`，只补装缺少的 `onnxruntime` 即可。
 
-这是生成式场景编辑，不是背景像素锁定或带遮罩的局部合成；多人选择只决定导入哪具骨架，不能保证模型只替换该人物。
-当前 23 张组合对比、批量验证和默认配置依据见 [场景调优](docs/SCENARIO_TUNING.md)；早期记录见 [v0.4 场景验证](docs/SCENARIOS.md)。
+将 [DWPose ONNX 模型](https://github.com/IDEA-Research/DWPose/tree/onnx)中的 `yolox_l.onnx` 和 `dw-ll_ucoco_384.onnx` 放入 `ComfyUI/models/dwpose/`，然后重启 ComfyUI。也可通过环境变量 `JR_DIRECTOR_POSE_MODELS` 指定模型目录。姿态检测在本地 CPU 上运行。
 
-### A 数据集 → B 身份 LoRA 候选集
+## 选择工作流
 
-提供 [批量脚本](scripts/batch_replace_dataset.py)，默认只生成清单；加 `--run` 才上传并执行。
-默认使用 B 身份、A 服装；每张 A 自动检测/拟合姿态，按源图比例生成，支持断点恢复并记录种子、输入哈希、实际 API 图和 prompt ID。
-多人、检测失败或明显拟合错误的图片转为人工检查，不猜测目标人物。
-生成图片只进入 `pending`，不自动变成批准的训练集，也不复制 A 的 caption 作为 B 的训练标签。
-命令、复核标准和当前限制见 [数据集批量流程](docs/DATASET_WORKFLOW.md)。
+将 [example 文件夹](example)中的 JSON 拖入 ComfyUI。首次使用，请在各个 Load Image 节点上传图片，并选择已安装的模型。
 
-## Integrated ControlNet / 内置姿态控制（v0.3.0）
+| 想做什么 | 工作流 |
+|---|---|
+| 保留原人物和场景，修改动作 | [Scene 1 Edit Pose](example/JR%20Director%20-%20Scene%201%20Edit%20Pose.json) |
+| 把 A 换成 B，保留 A 的服装、动作和场景 | [Scene 2 Replace Identity](example/JR%20Director%20-%20Scene%202%20Replace%20Identity.json) |
+| 在人物替换中增加深度控制 | [Scene 2 Pose and Depth](example/JR%20Director%20-%20Scene%202%20Pose%20and%20Depth.json) |
+| 使用目标机位的 3D 粗渲染图换视角 | [AnyAngle External 3D](example/JR%20Director%20-%20AnyAngle%20External%203D.json) |
 
-打开 [`examples/qwen21_director_controlnet.json`](examples/qwen21_director_controlnet.json)。
-API 示例为 [`examples/qwen21_director_controlnet_api.json`](examples/qwen21_director_controlnet_api.json)。
-本机已安装带中文说明和分组的示例工作流 **JR_Director_ControlNet_Example**，默认 512、25 步、强度 1.0，演示 Walking + 45° 相机。
-桌面同时提供 `JR Qwen Image 2.1 Director - ControlNet Example.json`，可以直接拖入 ComfyUI。
+演示素材位于 [examples/scenarios](examples/scenarios)，人物 B 参考图为 [examples/reference.png](examples/reference.png)。使用自己的图片时，需重新导入姿态，避免沿用示例的骨架。
 
-1. 从 [Kijai 的测试权重目录](https://huggingface.co/Kijai/QwenImage_experimental/tree/main/model_patches)
-   下载 `qwen_image_2.1_fun_controlnet_union_int8_convrot.safetensors`，放到 ComfyUI 配置的 `models/model_patches`。
-   约 3.78GB；本机已经安装并校验。也支持同目录 BF16 版本，BF16 尚未在本机实测。
-2. 将 Qwen 2.1 的 `MODEL`、`VAE` 接入 Director，在 `controlnet_name` 中选择权重。
-3. Director 的 `controlled_model` 接 KSampler；原有 `director_prompt` 继续接 Qwen 文本编码器。
-4. 身份图接编码器 `image_1`，Director 的 `pose_control` 接 `image_2`。
-   保持 `pose_image_reference=true`，让双参考图与 ControlNet 同时发挥作用。
-5. 编辑姿态后运行。`control_strength` 为控制强度；`control_start/end` 是去噪过程的开始/结束比例。
-   `disabled` 或强度为零不会加载本节点的 ControlNet 权重，输入模型直接透传。
+## 场景 1：同人物、同场景，修改动作
 
-只想使用 ControlNet 时，可断开编码器 `image_2` 并关闭 `pose_image_reference`；该开关调整提示词，**不会自动修改接线**。
-目前建议保留双参考图：本机测试中，只有身份图时原图姿势仍可能占主导。
-关闭 ControlNet 后若也断开 `image_2`，请另提供不引用姿态参考图的提示词。
+1. 打开 **Scene 1 Edit Pose**，在 Load Image 中上传原图，接入 Director 的 `image`。
+2. 点击 **从图片导入姿态**，选择目标人物，再点 **应用所选人物**。
+3. 在 **POSE** 模式下调整关节，例如拖动手腕抬起手臂。
+4. 查看黑底骨架预览，确认动作和构图后点击 **Run**。
 
-该集成保持旧节点 ID 和前六个输出索引。旧工作流默认关闭控制；模型文件不随 Git 仓库分发。
-权重必须是 **Qwen Image 2.1 Fun Union**，旧 Qwen InstantX / Fun ControlNet 不兼容，选错会明确报错。
-此版 UI 暴露 Pose 控制；虽然权重也支持 Depth、边缘和局部重绘，这些输入尚未集成到导演台。
+示例已将 `<image1>` 作为原图、`<image2>` 作为编辑后的骨架接入编码器。保存工作流可保留姿态；普通 Run 不会重新识图覆盖你的修改。
 
-### 实验：骨架下叠加淡原图
+默认使用 CFG 1、25 步、ControlNet 强度 0.25、控制区间 0–0.6。原图叠加和深度关闭，避免旧动作干扰新动作。
 
-`reference_opacity` 默认 **0（关闭）**，可试 `0.05` 或 `0.10`，表示原图保留 5% 或 10% 的强度。
-将来源图接到 Director 的 `image`，把 `control_image` 接到 Preview Image 查看实际控制图。
-原图取第一帧、等比例居中适配并留黑边；骨架颜色保持清晰。不会自动把原图人物变形到修改后的姿态。
-内部 ControlNet 使用此合成图；原来的 `pose_control` / `pose_preview` 仍是纯骨架，原有输出索引不变。
-现有示例的编码器 `image_2` 仍接纯骨架；如需单独实验图像参考叠加，可改接 `control_image`。
-大幅换姿态、换视角时，原图可能与目标骨架冲突；**不能将 5%–10% 当作已经验证的通用增强配方**。
-GitHub 调研、同种子对比与深度方案见 [姿态增强实验](docs/POSE_CONTROL_RESEARCH.md)。
+## 场景 2：用 B 替换 A，保留 A 的服装与场景
 
-底层实现来源与修改范围见 [第三方声明](docs/THIRD_PARTY_NOTICES.md)，
-本机实测见 [ControlNet 验证记录](docs/CONTROLNET_VALIDATION.md)。
-包含 GPL 回移植的 v0.3.0 整体按 GPL-3.0-or-later 分发；原 Director 代码的 MIT 授权保留。
-模型权重另受 Qwen Research License 约束。
+1. 打开 **Scene 2 Replace Identity**。
+2. 将 B 的参考图接到 `identity_image`，作为 `<image1>`；将 A 的目标场景图接到 `image`，作为 `<image2>`。
+3. 点击 **从图片导入姿态**，导入 A 的姿态；需要时继续编辑。
+4. 保持 `identity_scope=identity_only`，点击 **Run**。
+5. 检查输出的自动描述和生成图，筛选符合 B 身份及目标服装、动作的候选。
 
-## Image → Editable Pose / 图片导入姿态
+`identity_only` 使用 B 的脸、发型和体型特征，保留 A 的服装与鞋子。若希望连衣服也来自 B，改为 `full_appearance`。
 
-打开 [`examples/director_image_import.json`](examples/director_image_import.json)，无需加载 Qwen 模型。
+示例开启 `auto_describe`，复用连接的 Qwen3-VL 编码器读取 B 的身份特征及 A 的服装、动作和场景；默认无需逐张手写这些描述。识图有误时，可用 `prompt_prefix` / `prompt_suffix` 补充，或关闭自动描述后使用自己的提示词。图像引用统一写为 `<image1>`、`<image2>`。
 
-1. Load Image 上传图片，将 IMAGE 接到 Director 的 `image` 输入。
-2. 点击导演台上的 **从图片导入姿态**。只执行取得图片所需的上游节点，不运行 Director 后面的生成链。
-3. 预览中会显示人物编号，多人图选择目标人物，再点 **应用所选人物**。
-4. 人物变为 `Imported image` 姿态，进入 POSE 模式。可以修改关节、使用 IK、调整人物或摄影机，支持撤销/重做。
-5. 保存工作流即可保留导入及后续修改。普通 Run 使用已保存状态；换图后需再次主动导入。
+默认使用 CFG 3、25 步、ControlNet 强度 0.25、区间 0–0.6，原图叠加 5%。骨架通过 ControlNet 提供，编码器保留两张完整参考图。
 
-导入会重建姿态、人物变换和摄影机，按源图比例调整输出尺寸（32 像素步长）。源图中的人物位置也会保留；如需居中，可调整摄影机 target。
-批量 IMAGE 目前只取第 1 张；一张图最多检测 8 人，每次导入其中一人。检测先将最长边限制到 1024，界面报告的拟合误差以该检测图的像素为单位。
-未检测到人物时不修改当前姿态。低置信度的肢体关节保留默认局部角度，并显示缺失提示。
+## 导演台操作
 
-**这是二维关键点到三维 rig 的近似拟合**，使用固定骨长和姿态先验；它不恢复真实的人体比例、摄像机参数或被遮挡的深度。侧身、交叉肢体、严重遮挡、非人类比例需要手动检查。手指和完整面部不会被导入。
+| 模式 / 操作 | 用途 |
+|---|---|
+| CAMERA：左键拖动、滚轮 | 调整输出摄影机的角度与距离 |
+| CAMERA：Shift + 左键 | 移动摄影机注视点 |
+| ACTOR：左键 / Shift + 左键 | 旋转人物 / 移动人物位置 |
+| POSE：选择关节，调整旋转环或 XYZ | 修改局部姿态 |
+| POSE：拖动手腕或脚踝 | 调整手脚位置并带动相关关节 |
+| 右键 / 中键拖动 | 旋转 / 平移编辑观察视角 |
+| Camera view | 查看实际输出摄影机的构图 |
 
-图片在本机处理。导入缓存最多 8 张、10 分钟，不把源图、检测缩略图或临时令牌写进 Director 状态；导入后的骨架状态独立于缓存。
-关闭导入面板停止等待；已经提交的上游任务可在 ComfyUI 队列中查看或取消。
+右键观察视角与输出摄影机相互独立；黑底骨架预览反映输出视角。预设用于快速选择姿态，撤销/重做可恢复编辑。换图后应重新导入，再做动作调整。
 
-### Optional detector setup / 可选检测配置
+## 常用设置与接线
 
-使用当前 ComfyUI 的 Python 环境安装缺少的 `onnxruntime`、`opencv-python-headless`（如已有 `cv2` 则无需重复安装 OpenCV）；依赖清单为 [`requirements-pose.txt`](requirements-pose.txt)。拟合使用 ComfyUI 已有的 SciPy。
-将官方 [DWPose ONNX 模型](https://github.com/IDEA-Research/DWPose/tree/onnx) `yolox_l.onnx` 和 `dw-ll_ucoco_384.onnx` 放进 `ComfyUI/models/dwpose/`。
-也会从 ComfyUI 配置的共享模型根目录查找已有文件；可用 `JR_DIRECTOR_POSE_MODELS` 环境变量指定模型目录。
-不会自动下载模型或改变 CUDA/PyTorch。检测使用 CPU，避免挤占生成模型的显存。本机已有模型和依赖已直接复用。
+| 设置 / 输出 | 使用方法 |
+|---|---|
+| `controlnet_name` | 选择 2.1 Fun Union；`disabled` 关闭控制 |
+| `control_strength`、`control_start/end` | 调整控制力度与作用区间；从示例默认值开始 |
+| `control_backend` | 保持 `auto` 即可 |
+| `reference_opacity` | 原场景淡叠到骨架；可在 0–0.10 调整，改动作时建议先关闭 |
+| `controlled_model` | 接采样器 MODEL；使用 ControlNet 或 AnyAngle 时均从这里输出模型 |
+| `director_prompt` | 接 Qwen 编码器的提示词输入 |
+| `reference_image_1/2` | 使用场景示例中已连接的参考图输出，编码器 `resolution` 保持 0 |
+| `pose_image_reference` | 编码器是否还接入骨架：场景 1 开启，默认场景 2 关闭；开关不会自动改接线 |
+| `control_image`、`reference_description` | 分别预览实际姿态控制图与自动识图描述 |
 
-## Qwen Image 2.1 Workflow
+导入姿态后保持画布比例；改变宽高比会影响骨架与原图的对应关系。场景 1、2 用于保留原场景视点；换机位请使用 [AnyAngle 指南](docs/ANYANGLE.md)。
 
-打开 [`examples/qwen21_director_basic.json`](examples/qwen21_director_basic.json)。
-它是从本机既有 Qwen 2.1 workflow 复制并接入 Director 的独立示例，原工作流未改动。
+### 可选深度
 
-1. Load Image 选择你的角色参考图，接 `TextEncodeQwenImage21.images.image_1`。
-2. Director `pose_control` 接 `images.image_2`。
-3. Director `director_prompt` 接编码器 `prompt`。
-4. 加载 Qwen 2.1 diffusion model、Qwen3-VL 8B、Qwen 2.1 VAE；VAE 同时接编码器和解码器。
-5. 编码器的 `positive / negative / latent` 接 KSampler，使用示例的 Euler / simple / CFG 1 / 25 steps 起步。
+打开 **Scene 2 Pose and Depth**，选择已安装的 Depth Anything V2 权重。支持文件名带 `vits` / `vitb` / `vitl` 的 `depth_anything_v2_*.safetensors`，放入 `models/depthanything` 或 `models/depth_anything`，重启后选择。模型信息见 [Depth Anything V2](https://github.com/DepthAnything/Depth-Anything-V2)。该示例预选 Large，使用其他规格时请修改 `depth_model`。
 
-不要额外将原图 VAEEncode 后作为 sampler 初始 latent。本地 Core 编码器会处理参考 latent 和输出初始 latent。
-模型文件名请按自己安装的文件调整。仓库不下载模型。
-API 形式在 [`examples/qwen21_director_api.json`](examples/qwen21_director_api.json)。
+自动深度从 `image` 读取场景，在 CPU 上处理。`depth_strength` 调整深度控制强度，`depth_preview` 显示深度图。已有对齐的深度图时，选择 `depth_model=external`，接入 `depth_image`，使用白近黑远的相对深度。
 
-测试用玩具角色参考图位于 [`examples/reference.png`](examples/reference.png)。其他机器使用该示例时先在 Load Image 上传它，选择实际返回的文件名。
-生成结果与限制见 [`docs/VALIDATION.md`](docs/VALIDATION.md)。
+深度为可选项，会增加运行时间。原图深度保留旧动作和原人物体型，可能与目标动作或 B 的体型冲突；需要时关闭或降低强度。
 
-## Architecture / 状态与坐标
+## 批量制作候选图
 
-`shared/rig.json` 是骨架层级、不可变 rest offsets、颜色、连接和预设的共享定义。
-`frontend/three` 负责场景/关节/IK/投影；`frontend/components` 负责 UI；`director/` 是无 ComfyUI 依赖的纯 Python 逻辑。
-V3 节点仅做参数桥接与 IMAGE tensor 转换。没有 sampler、模型或 ControlNet 的重复实现。
+使用 [批量操作指南](docs/DATASET_WORKFLOW.md)处理 A 数据集。脚本会逐张导入姿态、替换身份，并保存待筛选候选，支持中断后继续。
 
-- 右手坐标，Y 向上，角色正面为 +Z，角色自身右侧为 -X。
-- Camera azimuth：0° 正面、90° 角色右侧、180° 背面、270° 左侧。
-- 局部关节旋转使用 XYZ Euler（度）；actor 使用 YXZ 顺序，其中正 yaw 对应绕世界 -Y。
-- 相对 yaw 元数据 = `(camera.azimuth - actor.yaw) mod 360`。
-- 人物发生位移/倾斜时，提示词使用实际摄影机位置在 actor 坐标系内的角度，避免简单相减带来的偏差。
-- 六平面 frustum clipping、相机后方剔除、深度排序、宽高比在前后端一致；两种光栅化器的抗锯齿像素可能略有不同。
+## 常见问题
 
-完整设计说明见 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)。
+- **找不到节点或界面没有加载**：确认节点目录安装正确，重启 ComfyUI 后刷新浏览器；检查启动日志中的缺失依赖。
+- **缺少模型 / 模型名称无效**：将权重放到上表目录，刷新列表，并在工作流中重新选择文件。示例不会下载模型。
+- **换图后仍是旧姿态**：重新点击“从图片导入姿态”；Run 会保留已编辑的骨架。
+- **脸、衣服或动作不符合要求**：先检查图像顺序、`identity_scope`、自动描述及骨架预览；再调整控制强度或补充提示词。
+- **多人图换错人**：人物选择只决定导入哪具骨架；建议先裁切目标人物，再处理多人场景。
 
-## Known Limitations / 已知限制
+图片导入属于近似姿态拟合，手指、完整面部、遮挡和特殊体型需要人工调整。生成式编辑不保证背景像素不变，也不保证身份、衣物细节和身体比例完全一致。制作 LoRA 数据时应逐张筛选，并另行核对训练标签。
 
-- 自然语言的连续角度不是模型几何约束；双参考图也是指导，不等于 Pose ControlNet。
-- 实测玩具角色：侧面/45°和举手有效；正面行走腿部跟随较弱，背面鞋朝向不可靠，举手可能被裁切。请见验收记录，而不是将成功出图当作严格姿态达标。
-- 当前只输出 OpenPose 风格身体图；没有针对某一个 ControlNet 模型的逐项兼容验证。
-- 无完整手指、脚掌、面部 rig；DWPose 导入是近似 2D→rig 拟合，不是可靠的真实三维重建。
-- FK/IK 保持骨长，但没有人体关节角度限制、碰撞、脚底接地或躯干 IK；可以摆出不自然的姿态。
-- front/back 与完全重合的侧面肢体仍可能存在二维歧义；骨架颜色不代表身份或服装。
-- 新视角看不到的身份/服装细节需要模型猜测；图像参考比例和人体 rig 比例不同会影响服从程度。
-- `auto` framing 是基于关键关节可见性的粗略判断。
-- 支持从多人图片中选择一人，不包含同一舞台的 multi-actor、timeline、video、训练 LoRA 或 ControlNet 安装。
+## 许可证
 
-## License / Third-party references
-
-本项目源代码采用 MIT。Vue 与 Three.js 采用 MIT；分发许可证见 [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES.md)。
-Inspired by the interaction concepts of ComfyUI-qwenmultiangle and ComfyUI-3D-OpenPose-Editor-DW, but implemented as a separate JR Qwen Image 2.1 Director architecture.
-
-- [ComfyUI-qwenmultiangle](https://github.com/jtydhr88/ComfyUI-qwenmultiangle)：参考 Vue/TS/Three 与 DOM widget 架构。
-- [ComfyUI-3D-OpenPose-Editor-DW](https://github.com/LLAI-lab/ComfyUI-3D-OpenPose-Editor-DW)：参考交互与算法思路；未复制其未明确许可的源码。
-- [设计讨论](https://chatgpt.com/share/6aba3a2c-c3a4-83ea-b686-4faa2d635055)：任务方向与取舍。
+项目整体按 [GPL-3.0-or-later](LICENSE) 分发。第三方组件及原始组件的授权见 [第三方声明](docs/THIRD_PARTY_NOTICES.md)。模型权重不随仓库分发，使用前请查看各自的模型许可证。

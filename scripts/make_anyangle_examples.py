@@ -71,7 +71,7 @@ for external in (False, True):
         + '\nAnyAngle 用于同人物换机位，不是身份替换模型，也不自动重建 3D 场景。\n'
         'examples/reference.png → input/qwen21_director_reference_20260928.png。\n'
         'examples/scenarios/jr_anyangle_coarse60.png → input/ 同名文件（外部入口演示）。\n'
-        '将作者 QI2.1_AnyAngle.safetensors 放入 models/loras，本机已安装。\n'
+        '将作者 QI2.1_AnyAngle.safetensors 放入 models/loras，刷新后选择该模型。\n'
         '作者：https://huggingface.co/lilylilith/QI_2.1_AnyAngle'
     ]
     for n in workflow['nodes']:

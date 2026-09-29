@@ -1,81 +1,68 @@
-# 固定人物 IP 的 LoRA 候选集流程
+# 批量制作人物 LoRA 候选图
 
-用户目标：素材少时，借用 A 数据集的动作、服装、场景和视角，为 B 制作身份 LoRA 候选图；没有 A 数据集时，使用导演台逐张补齐动作和视角。
-**默认只迁移 B 的脸、发型和体型，保留 A 每张图的服装。** 当前生成仍可能出现身份/体型漂移，所以结果不是自动批准的训练集。
+将 A 数据集的动作、服装、场景作为目标，用 B 的参考图替换身份。默认保留 A 的衣服，仅从 B 获取脸、发型和体型特征。
 
-## 先规划，再执行
+先用 [场景 2 工作流](../example/JR%20Director%20-%20Scene%202%20Replace%20Identity.json)确认模型可以运行，再开始批量处理。需要安装 README 中的 DWPose 模型和检测依赖。
 
-v0.6.0 可使用自动识图，无需逐张编写 B 身份和 A 服装描述：
+## 1. 准备输入
 
-```powershell
-python scripts/batch_replace_dataset.py --source-dir 'D:/datasets/person_A' --identity-image 'D:/references/person_B.png' --auto-describe --reference-opacity 0.05 --output-dir 'D:/datasets/person_B_candidates'
+- A：一个包含目标图片的文件夹。
+- B：一张清晰的身份参考图。
+- 输出：位于 A 文件夹之外的新目录。
+
+在项目根目录，使用 ComfyUI 的 Python 环境执行。以下 `D:/datasets`、`D:/references` 和 `D:/ComfyUI` 都是占位路径，请替换成自己的实际位置。
+
+```shell
+python scripts/batch_replace_dataset.py --source-dir "D:/datasets/person_A" --identity-image "D:/references/person_B.png" --auto-describe --reference-opacity 0.05 --output-dir "D:/datasets/person_B_candidates"
 ```
 
-确认输入输出目录后，同一命令加 `--run --pose-models 'D:/Comfy-Desktop/ComfyUI-Shared/models/DreamID-V/pose/models' --limit 5`。
-本地 Qwen3-VL 自动读取 B 的脸/发型/眼镜/体型，以及每张 A 的衣物/动作/场景，CFG 3；生成的描述保存在执行 history 的文本预览输出中。
-模型可能漏读或误读属性，仍应核对。默认提示词不绑定性别、衣服颜色或具体场景，自动描述随图变化。
-`--auto-describe` 记入运行配置，切换该选项须使用新输出目录；旧的手写描述清单保持可恢复。
+这一步只创建图片清单，不提交生成。`--auto-describe` 会在生成时自动读取 B 的身份特征、A 的服装和场景，无需逐张手写提示词。
 
-下方为仍保留的手动描述方式：
+## 2. 先生成少量候选
 
-使用 ComfyUI 的 Python 环境。在项目根目录运行，替换下列路径和 B 描述：
+在同一命令后加 `--run`，指定 DWPose 模型目录，并用 `--limit` 控制本次处理数量：
 
-```powershell
-python scripts/batch_replace_dataset.py --source-dir 'D:/datasets/person_A' --identity-image 'D:/references/person_B.png' --identity-description 'B 的脸部、发型和体型特征；不要写 B 的服装' --output-dir 'D:/datasets/person_B_candidates'
+```shell
+python scripts/batch_replace_dataset.py --source-dir "D:/datasets/person_A" --identity-image "D:/references/person_B.png" --auto-describe --reference-opacity 0.05 --output-dir "D:/datasets/person_B_candidates" --run --pose-models "D:/ComfyUI/models/dwpose" --limit 5
 ```
 
-默认只创建 `manifest.json`，不会上传文件或执行推理。输出目录必须在 A 数据集之外，源文件保持原样。
-B 的简短描述建议使用模型能清楚理解的文字；身份图片仍是主要身份参考。不要在 identity_only 模式描述 B 的外套等服装。
+ComfyUI 须保持运行；默认连接 `http://127.0.0.1:8188`，其他地址可使用 `--url`。脚本按顺序处理图片；队列已有其他任务时会停止，待队列空闲后再运行。
 
-若已有经过核对的 A 服装/动作描述，使用 `--scene-descriptions descriptions.json`。例如：
+默认使用 `identity_only`、512 长边、ControlNet 强度 0.25、区间 0–0.6。自动描述使用 CFG 3。需要 B 的整套服装时，添加 `--identity-scope full_appearance`；使用 `--resolution` 调整分辨率。
+
+## 3. 检查输出
+
+| 位置 | 内容 |
+|---|---|
+| `pending/` | 待审核图片及对应来源记录 |
+| `manifest.json` | 处理清单、完成状态及需要人工处理的原因 |
+| `history/` | 生成记录，可查看自动识图描述 |
+| `prompts/` | 对应的生成工作流 |
+
+检查是否是 B、是否保留 A 的服装与动作、身体比例是否合理，以及手指、遮挡、脸和衣服细节是否正确。候选不会自动批准为训练图，也不会复制 A 的训练标签或启动 LoRA 训练。
+
+零人、多人、关节不足或姿态拟合明显异常的图片会标为 `needs_review`，跳过生成；可先裁切或在导演台手动处理。
+
+## 4. 继续与恢复
+
+再次执行相同命令，会跳过已完成图片并继续剩余任务。去掉 `--limit` 可处理剩余全部图片。
+
+同一输出目录必须使用相同输入与配置；更换 B、新增 A 图片或改变选项时，请新建输出目录。源图片会保持原样。
+
+关闭脚本不会取消已经提交到 ComfyUI 的任务。若遇到提交状态不明、历史缺失或文件已变更的提示，先检查 ComfyUI 队列和清单，避免重复生成。
+
+## 可选：手写描述
+
+去掉 `--auto-describe`，使用 `--identity-description "B 的脸部、发型和体型特征"`；此方式默认 CFG 1。`identity_only` 模式的 B 描述不应包含其服装。
+
+需要为 A 提供逐图描述时，可添加 `--scene-descriptions descriptions.json`。文件内容为相对路径与描述的对应关系：
 
 ```json
 {
-  "classroom/001.png": "burgundy cardigan, cream blouse, blue jeans and white sneakers; raising the right hand in a classroom"
+  "folder/001.png": "Describe the clothing, footwear, pose and setting to retain."
 }
 ```
 
-键是相对 A 目录的图片路径，统一用 `/`。值只描述要保留的衣服、动作、场景，不包含 A 的名字、脸部或体型身份描述。
-这是给生成模型的逐图约束，不是训练 caption。脚本不会自动把未经核对的 A `.txt` 文件当作这些描述。
-如果第一次计划就使用该选项，恢复时也须给同一文件；改变其内容需新建一次运行。
+请用各图实际内容替换示例句子，不包含 A 的脸、名字或身份特征。这些描述用于生成，不是训练 caption；训练标签须另行审核。
 
-确认路径后，同一命令加上执行参数。先跑少量样本：
-
-```powershell
-python scripts/batch_replace_dataset.py --source-dir 'D:/datasets/person_A' --identity-image 'D:/references/person_B.png' --identity-description 'B 的脸部、发型和体型特征；不要写 B 的服装' --output-dir 'D:/datasets/person_B_candidates' --run --pose-models 'D:/Comfy-Desktop/ComfyUI-Shared/models/DreamID-V/pose/models' --limit 5
-```
-
-- 默认 `identity_only`、512 长边、ControlNet 强度 0.25、区间 0–0.6、原图淡叠加 **0**。自动描述方式使用 CFG 3，手写方式保留 CFG 1；`--reference-opacity 0.05` 可另建一次实验，不能保证更好。后端自动优先使用已合并的官方实现。
-- `--identity-scope full_appearance` 才使用 B 的整套服装。`--resolution` 可改，但更大尺寸的批量性能尚未验证。
-- 去掉 `--limit` 处理清单中剩余可执行图片。清单固定于首次扫描；新增 A 图片或改变 B / 配置应使用新输出目录。
-- 同一个输出目录有进程锁，避免重复启动并发批处理。
-- ComfyUI 队列有其他任务时停止，不会插入整批任务；每次只提交一张。
-
-## 恢复与记录
-
-再次执行**相同参数、相同输出目录**会恢复清单，已完成图片跳过；已记录 prompt ID 的任务先读取原结果，不重复提交。
-退出脚本不会取消服务端正在执行的图片。网络在提交时中断、尚未获得 prompt ID，会保留 `submitting` 状态并停止自动重试，需核查队列/历史后处理，避免重复出图。
-服务历史丢失、源文件变化或已保存候选图被修改时，也会要求先检查，不悄悄重新生成或覆盖。
-
-输出结构：
-
-```text
-manifest.json           # 每张来源、SHA256、种子、状态、拟合数据、prompt ID
-prompts/<id>.json       # 实际提交的完整 API 图
-history/<id>.json       # ComfyUI 执行记录
-pending/<id>.png        # 待审核候选
-pending/<id>.json       # 来源和身份参考哈希、范围、种子、拟合数据
-```
-
-没有自动输出训练 caption，也不会把 A 的 `.txt` 标签原样复制给 B。A 原标签可能包含 A 的名字、身份或不再成立的身体描述，必须重审。
-
-## 当前支持与需要人工处理的情况
-
-- 单张图恰好检测到一人时自动拟合。零人、多人、关节不足或拟合误差超过长边 5% 转为 `needs_review`，跳过生成；先人工裁切、选人或用导演台处理。
-- 仅用一张 B 身份参考；多角度身份参考选择、自动人脸相似度打分、自动 caption、批准/淘汰界面尚未实现。
-- 生成后的 `review_status=pending` 始终表示尚未批准，不能因为模型成功执行就直接投入 LoRA 训练。
-- v0.4.0 仅用 B 描述的样本曾误复制 B 的衣服并丢失举手，被人工判为不合格。v0.6.0 的自动身份/服装描述已改善示例中的换人和衣服来源问题，详见 [当前组合验证](SCENARIO_TUNING.md)；**仍是需审核的候选生成流程**。
-- 人工检查：是否是 B；是否仍是 A 的服装；动作/视角是否正确；体型是否混入 A；手指和遮挡是否合理；是否混入错误脸或重复人物。
-- 同一张 B 参考反复扩增可能重复模型偏差；少量真实/原始 B 素材应保留用于对照，不把所有合成结果视作等价真值。
-
-本版本只提供候选生成和追溯，不启动 LoRA 训练，也不修改现有数据集。
+[返回使用首页](../README.md)
