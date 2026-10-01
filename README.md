@@ -76,6 +76,8 @@ python -m pip install -r ComfyUI/custom_nodes/JR-Qwen-Image-2.1-Director/require
 
 示例开启 `auto_describe`，复用连接的 Qwen3-VL 编码器读取 B 的身份特征及 A 的服装、动作和场景；默认无需逐张手写这些描述。识图有误时，可用 `prompt_prefix` / `prompt_suffix` 补充，或关闭自动描述后使用自己的提示词。图像引用统一写为 `<image1>`、`<image2>`。
 
+自动描述接受 `IDENTITY:` / `OUTFIT_AND_SCENE:` 标签的大小写差异、标签后的空白和中英文冒号，也兼容描述开头的 `ID:` 缩写。缺少标签时，节点报错和 ComfyUI 日志会显示缺失项及完整生成原文，便于排查。前后缀只用于后续图像生成，不会修改自动识图指令。自动描述采用贪心解码，不受采样器的 seed 或 CFG 控制。
+
 默认使用 CFG 3、25 步、ControlNet 强度 0.25、区间 0–0.6，原图叠加 5%。骨架通过 ControlNet 提供，编码器保留两张完整参考图。
 
 ## 导演台操作

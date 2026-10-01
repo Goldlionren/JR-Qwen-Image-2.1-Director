@@ -1,5 +1,37 @@
 """Optional local visual descriptions using the already loaded Qwen3-VL CLIP."""
+import re
 import torch
+
+
+_LABELS = ('IDENTITY:', 'OUTFIT_AND_SCENE:')
+_LABEL_PATTERN = re.compile(r'(?<!\w)(IDENTITY|OUTFIT_AND_SCENE)\s*[:：]', re.IGNORECASE)
+
+
+def normalize_description(raw_text):
+    """Normalize field labels only; preserve prose and expose failures verbatim."""
+    text = raw_text
+    if '</think>' in text:
+        text = text.split('</think>', 1)[1]
+    # Some responses abbreviate only the first field. Do not replace ID in prose.
+    text = re.sub(r'\A\s*ID\s*[:：]', 'IDENTITY:', text, flags=re.IGNORECASE)
+    text = _LABEL_PATTERN.sub(lambda match: match[1].upper() + ':', text).strip()
+    missing = [label for label in _LABELS if label not in text]
+    if not text or missing:
+        reason = 'Empty description after cleanup. ' if not text else ''
+        message = (
+            'JR Director: auto_describe format check failed. ' + reason
+            + 'Missing labels: ' + ', '.join(missing) + '.\n'
+            'Expected IDENTITY: and OUTFIT_AND_SCENE: (case-insensitive; leading ID: accepted).\n'
+            'Generation: greedy (do_sample=False, temperature=0.0), max_length=192.\n'
+            f'Generated text (raw, {len(raw_text)} characters):\n'
+            f'--- BEGIN GENERATED TEXT ---\n{raw_text}\n--- END GENERATED TEXT ---'
+        )
+        if text != raw_text:
+            message += f'\nText after cleanup (repr): {text!r}'
+        message += '\nRetry, or turn off auto_describe and supply a reviewed prompt_prefix.'
+        # ComfyUI includes this exception in both its error report and server log.
+        raise ValueError(message)
+    return text
 
 
 def description_instruction(identity_scope):
@@ -22,11 +54,6 @@ def describe_references(clip, identity, scene, identity_scope):
     prompt = description_instruction(identity_scope)
     images = torch.cat((identity[:1], scene[:1]), dim=0)
     tokens = clip.tokenize(prompt, image=images, min_length=1, thinking=False)
-    ids = clip.generate(tokens, do_sample=False, max_length=192, mtp=False)
-    text = clip.decode(ids)
-    if '</think>' in text:
-        text = text.split('</think>',1)[1]
-    text = text.strip()
-    if not text or 'IDENTITY:' not in text or 'OUTFIT_AND_SCENE:' not in text:
-        raise ValueError('JR Director: visual description was incomplete; retry or turn off auto_describe and supply a reviewed prompt_prefix.')
-    return text
+    # Greedy decoding already ignores temperature; keep the intent explicit.
+    ids = clip.generate(tokens, do_sample=False, temperature=0.0, max_length=192, mtp=False)
+    return normalize_description(clip.decode(ids))
